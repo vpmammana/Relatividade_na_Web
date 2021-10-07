@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt">
+<meta charset="UTF-8">
+<title>Escola Brasil - Lista de Presença</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="">
+<head>
+    <link href="./bibliotecas/bootstrap-5.1.1-dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="./bibliotecas/bootstrap-5.1.1-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./bibliotecas/html5-qrcode.min.js"></script>    
+</head>
+<body>
+    <!--MENU-->
+    <nav class="navbar navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Lista de Presença</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                      <a class="nav-link active"href="./gerador_qr_code.html">Gerador de QRCode</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"href="#" id="downloadCSV">Download CSV</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"href="#" id="limparDados">Limpar Dados</a>
+                    </li>
+                </ul>
+                <form class="d-flex">
+                    <input class="form-control me-2" type="text" placeholder="URL Destino" aria-label="URL Destino" id="urlDestino">
+                    <button class="btn btn-outline-success" type="button" id="btnEnviarLista">Enviar</button>
+                  </form>
+              </div>
+        </div>
+    </nav>
+    <div class="container">
+        <!--EXIBIÇÃO DA CÂMERA-->
+        <div class="row">
+            <div class="col-6">
+                <select id="cameras">
+                </select>
+            </div>
+            <div class="col-6">
+                <button type="button" id="estadoCamera" disabled="true">Iniciar</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="mx-auto" style="width: 300; height: 300;" id="containerCamera" style="display:none;">
+                <div id="reader"></div>
+            </div>
+        </div>
+        <!--LISTA DE REGISTROS-->
+        <div class="row">
+            <ul class="list-group" id="qrCodeLidos">
+            </ul>
+        </div>
+    </div>
+    <script type="module">
+        import { LeitorQRCode } from "./LeitorQRCode.js";
+        window.leitorQRCode = new LeitorQRCode();
+        window.addEventListener("beforeunload", (evento) => {
+            if (window.leitorQRCode.leitorAtivo()){
+                window.leitorQRCode.pararLeitor();
+            }
+        });      
+    </script>
+</body>
+</html>

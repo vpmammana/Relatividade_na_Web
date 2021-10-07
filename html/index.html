@@ -1,0 +1,31 @@
+<html>
+	<head>
+		<title>
+		Entendendo a relatividade
+		</title>
+	</head>
+	<style>
+	</style>
+
+<body>
+
+    <script type="module">
+        import { movel } from "./objetos.js";
+        window.movel1 = new movel("primeiro", "carrinho2.png");
+        setTimeout(function (){
+						//alert(window.movel1.estado_prop);
+						if (window.movel1.estado_prop == "falhou"){
+						alert("Não foi possível carregar o arquivo: "+window.movel1.fantasia.src);
+						throw new Error ('Não foi possível ler o arquivo de imagem');
+						}
+
+						},1000);
+						//window.movel1.tamanho_percentual(20,20);
+						window.movel1.largura_percentual=10;
+						window.movel1.altura_percentual=10;
+
+						//window.movel1.posiciona_percentual(50,50);
+    </script>
+</body>
+</html>
+
