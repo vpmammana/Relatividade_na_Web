@@ -4,25 +4,65 @@
 		Entendendo a relatividade
 		</title>
 	</head>
-	<style>
-	</style>
+<style>
+
+
+body{
+  background-color: blue;
+  background: -moz-radial-gradient(center, ellipse cover, #0047ea 0%, #151515 100%);
+  background: radial-gradient(#0047ea, #151515);
+  z-index: 0;
+  
+  height: 100vh;
+}
+
+
+</style>
+<script>
+function acao(){
+
+
+window.movel1.desliza(0.1,0,300); 
+
+window.movel2.desliza(-0.1,0,295); 
+
+//window.movel1.gira(1,2000)
+
+}
+
+
+</script>
 
 <body>
 
+<input type="button" value="Ação" onclick="acao();">
+
     <script type="module">
         import { movel } from "./objetos.js";
-        window.movel1 = new movel("primeiro", "carrinho2.png");
-        setTimeout(function (){
-						//alert(window.movel1.estado_prop);
-						if (window.movel1.estado_prop == "falhou"){
-						alert("NÃ£o foi possÃ­vel carregar o arquivo: "+window.movel1.fantasia.src);
-						throw new Error ('NÃ£o foi possÃ­vel ler o arquivo de imagem');
-						}
+        window.movel1 = new movel("amarelo", "../fantasias/carrinho_amarelo.png");
+        window.movel2 = new movel("vermelho", "../fantasias/carrinho_vermelho.png");
 
-						},1000);
-						//window.movel1.tamanho_percentual(20,20);
-						window.movel1.largura_percentual=10;
-						window.movel1.altura_percentual=10;
+
+setTimeout(function (){
+	//alert(window.movel1.estado_prop);
+	if (window.movel1.estado_prop == "falhou"){
+	alert("Não foi possível carregar o arquivo: "+window.movel1.fantasia.src);
+	throw new Error ('Não foi possível ler o arquivo de imagem');
+	}
+
+	},500);
+	window.movel1.largura_percentual=20;
+	window.movel1.altura_percentual=20;
+	window.movel1.posicao_percentual_x=30;
+	window.movel1.posicao_percentual_y=30;
+
+	window.movel2.largura_percentual=20;
+	window.movel2.altura_percentual=20;
+	window.movel2.posicao_percentual_x=90;
+	window.movel2.posicao_percentual_y=30;
+
+	window.movel1.acrescenta_em_detecao(window.movel2);
+
 
 						//window.movel1.posiciona_percentual(50,50);
     </script>
