@@ -35,13 +35,39 @@ window.movel2.desliza(-0.1,0,295);
 
 <body>
 
-<input type="button" value="Ação" onclick="acao();">
+<table width="10%">
+<tr>
+<td><input type="button" value="Ação" onclick="acao();"></td><td></td><td></td>
+</tr>
+<tr>
+	<td><input type="button" value="Gira Móvel" onclick="window.controle.selecionado.gira(document.getElementById('delta_graus').value,document.getElementById('passos').value);"></td>
+	<td><input id="delta_graus" size="4" type="text" placeholder="delta_graus"></td>
+	<td><input id="passos" type="text" size="4" placeholder="passos"></td>
+</tr>
+<tr>
+<td><input type="button" value="Para o Giro" onclick="window.controle.selecionado.para_giro();"></td><td></td><td></td>
+</tr>
+<tr>
+	<td><input type="button" value="Deslizar" onclick="window.controle.selecionado.desliza( document.getElementById('x_percentual').value, document.getElementById('y_percentual').value, document.getElementById('passos_posicao').value);"></td>
+	<td><input id="x_percentual" size="4" type="text" placeholder="x_%"></td>
+	<td><input id="y_percentual" type="text" size="4" placeholder="y_%"></td>
+	<td><input id="passos_posicao" type="text" size="4" placeholder="passos"></td>
+
+</tr>
+<tr>
+<td><input type="button" value="Para Deslizamento" onclick="window.controle.selecionado.para_desliza();"></td><td></td><td></td>
+
+
+</table>
 
     <script type="module">
         import { movel } from "./objetos.js";
-        window.movel1 = new movel("amarelo", "../fantasias/carrinho_amarelo.png");
-        window.movel2 = new movel("vermelho", "../fantasias/carrinho_vermelho.png");
+	import { controle_geral } from "./objetos.js";
 
+	window.controle = new controle_geral();
+        window.movel1 = new movel("amarelo", "../fantasias/carrinho_amarelo1.png", "fantasia1", window.controle);
+        window.movel2 = new movel("vermelho", "../fantasias/carrinho_vermelho1.png", "fantasia1", window.controle);
+	window.controle.selecionado = window.movel1;
 
 setTimeout(function (){
 	//alert(window.movel1.estado_prop);
@@ -53,6 +79,11 @@ setTimeout(function (){
 	},500);
 	window.movel1.largura_percentual=20;
 	window.movel1.altura_percentual=20;
+	window.movel1.acrescenta_fantasia("../fantasias/carrinho_amarelo2.png", "fantasia2");
+	window.movel1.acrescenta_fantasia("../fantasias/carrinho_amarelo3.png", "fantasia3");
+	window.movel1.acrescenta_fantasia("../fantasias/carrinho_amarelo4.png", "fantasia4");
+	window.movel1.acrescenta_fantasia("../fantasias/carrinho_vermelho1.png", "fantasia4");
+
 	window.movel1.posicao_percentual_x=30;
 	window.movel1.posicao_percentual_y=30;
 
