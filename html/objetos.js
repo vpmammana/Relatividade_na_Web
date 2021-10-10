@@ -27,10 +27,15 @@ function doOverlap( l1x, l1y,  r1x, r1y,  l2x, l2y,  r2x, r2y) {
 export class controle_geral {
 
 constructor (div){
+	this.forca_x = 1000;
+	this.forca_y = 1000;
+	
+
 	this.tabuleiro = div;
 	this.selecionado = null; // objeto que estah sendo programado ou controlado
 	this.pronto_para_animar=false; // espera ficar pronto para animar
-	this.guarda_atrito      = 1; // coeficiente de atrito para todos os objetos deslizantes
+	this.guarda_atrito       = 1; // coeficiente de atrito para todos os objetos deslizantes
+	this.guarda_atrito_freio = 30;
 	this.objetos_em_cena = []; // todos os objetos em cena que precisam ser animados
 	this.delta_t_animacao=50; // tempo de repeticao do algoritmo de anomacao (setInterval)
 	this.delta_t_simulacao= 0.01; // tempo de simulacao
@@ -38,11 +43,13 @@ constructor (div){
 	this.palco = null;
 	this.guarda_central = this.selecionado; // por enquanto null e soh pode ser definido pela propriedade
 	this.espacamento_superior = 0;
+	this.palco = new classe_palco(this.tabuleiro, null, this);
+	this.palco.adiciona_event_listeners();
 }
 
 set central(objeto){
 	this.guarda_central = objeto;
-	if (this.palco == null ) {this.palco = new classe_palco(this.tabuleiro, objeto, this);}
+	if (this.palco == null ) {alert("Erro: Por algum motivo o palco nao foi criado.");}
 	else {this.palco.central = objeto;}
 }
 
@@ -66,15 +73,33 @@ let i;
 		
 		let objeto = this.objetos_em_cena[i];
 			objeto.guarda_vx = objeto.guarda_vx + objeto.guarda_ax * this.delta_t_simulacao;
-			objeto.guarda_ax = - objeto.guarda_vx * objeto.atrito;
+			objeto.guarda_ax = - objeto.guarda_vx * (objeto.atrito + (objeto.freio * objeto.guarda_atrito_freio));
 			objeto.guarda_vy = objeto.guarda_vy + objeto.guarda_ay * this.delta_t_simulacao;
-			objeto.guarda_ay = - objeto.guarda_vy * objeto.atrito;
+			objeto.guarda_ay = - objeto.guarda_vy * (objeto.atrito + (objeto.freio * objeto.guarda_atrito_freio));
 			objeto.posicao_percentual_x = objeto.posicao_percentual_x + objeto.guarda_vx * this.delta_t_simulacao;
 			objeto.posicao_percentual_y = objeto.posicao_percentual_y + objeto.guarda_vy * this.delta_t_simulacao;
+			objeto.freio = 0;
 	
 	
 	} // fim for
 } // fim metodo animacao
+
+set atrito_freio(valor) {
+	this.guarda_atrito_freio=valor;
+let i;
+
+	for (i=0; i < this.objetos_em_cena.length; i++){
+		
+		let objeto = this.objetos_em_cena[i];
+		objeto.atrito = this.guarda_atrito_freio;
+
+	}
+
+}
+
+get atrito_freio(){
+	return guarda_atrito_freio;
+}
 
 set atrito_geral(valor) { // quando esta propriedade eh definida, sobescreve os atritos de todos os objetos em cena
 	this.guarda_atrito=valor;
@@ -107,7 +132,30 @@ constructor (div, movel_central, controle) {
 	
 }
 
+adiciona_event_listeners(){
+this.tabuleiro.tabIndex=0;
+this.tabuleiro.focus();
+let that=this;
+this.tabuleiro.addEventListener( "keydown", 
+function (e) { 
+console.log(e.key);
+if (e.key == "ArrowRight") { that.central.Fx =   that.controle.forca_x;}
+if (e.key == "ArrowLeft")  { that.central.Fx = - that.controle.forca_x;}
+if (e.key == "ArrowUp")    { that.central.Fy =   that.controle.forca_y;}
+if (e.key == "ArrowDown") { that.central.Fy = - that.controle.forca_y;}
+if (e.key == " ") { that.central.freio = 1;}
+
+
+}, true)
+
+
+}
+
+
 corrige_palco() {
+
+	if (this.central == null) { console.log("corrige_palco nao estah rodando porque o central nao foi definido"); return;}
+	if (this.central.lista_de_fantasias.length < 1) {console.log("O central nao tem fantasias."); return;}
 	var dx = 0;
 	var dy = 0;
 	
@@ -155,7 +203,8 @@ constructor (id, arquivo, nome_fantasia, controle){
 	this.delta_t=10; // ms
 
 	this.guarda_atrito = controle.atrito_geral;
-
+	this.guarda_atrito_freio = controle.guarda_atrito_freio;
+        this.freio = 0;
 	this.massa=0.5;
 
 	this.guarda_vx=0;
