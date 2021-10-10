@@ -26,19 +26,39 @@ function doOverlap( l1x, l1y,  r1x, r1y,  l2x, l2y,  r2x, r2y) {
 
 export class controle_geral {
 
-constructor (){
-
-	this.selecionado = null;
-	this.atrito      = 1; // coeficiente de atrito para todos os objetos deslizantes
-	this.objetos_em_cena = [];
-	this.delta_t_animacao=10;
-	this.delta_t_simulacao= 0.01;
+constructor (div){
+	this.tabuleiro = div;
+	this.selecionado = null; // objeto que estah sendo programado ou controlado
+	this.pronto_para_animar=false; // espera ficar pronto para animar
+	this.guarda_atrito      = 1; // coeficiente de atrito para todos os objetos deslizantes
+	this.objetos_em_cena = []; // todos os objetos em cena que precisam ser animados
+	this.delta_t_animacao=10; // tempo de repeticao do algoritmo de anomacao (setInterval)
+	this.delta_t_simulacao= 0.01; // tempo de simulacao
 	let that = this;
+	this.palco = null;
+	this.guarda_central = this.selecionado; // por enquanto null e soh pode ser definido pela propriedade
+}
+
+set central(objeto){
+	this.guarda_central = objeto;
+	if (this.palco == null ) {this.palco = new classe_palco(this.tabuleiro, objeto);}
+	else {this.palco.central = objeto;}
+}
+
+get central() {
+	return this.guarda_central;
+}
+
+inicia_animacao(){
+	let that=this;
 	this.animacao = setInterval(function () { that.animar();}, that.delta_t_animacao);
+
 }
 
 animar() {
-
+if (this.palco == null) { return;}
+if ( this.pronto_para_animar == false) { return;} // ainda nao tem os imgs para animar
+if (this.guarda_central == null) {this.guarda_central = this.selecionado;}
 let i;
 
 	for (i=0; i < this.objetos_em_cena.length; i++){
@@ -50,19 +70,83 @@ let i;
 			objeto.guarda_ay = - objeto.guarda_vy * objeto.atrito;
 			objeto.posicao_percentual_x = objeto.posicao_percentual_x + objeto.guarda_vx * this.delta_t_simulacao;
 			objeto.posicao_percentual_y = objeto.posicao_percentual_y + objeto.guarda_vy * this.delta_t_simulacao;
+			if (objeto == this.central ) {this.palco.corrige_palco();}
 	
 	
 	} // fim for
-
-	
 } // fim metodo animacao
 
+set atrito_geral(valor) { // quando esta propriedade eh definida, sobescreve os atritos de todos os objetos em cena
+	this.guarda_atrito=valor;
+let i;
+
+	for (i=0; i < this.objetos_em_cena.length; i++){
+		
+		let objeto = this.objetos_em_cena[i];
+		objeto.atrito = this.guarda_atrito;
+
+	}
 } // fim class controle_geral
+
+get atrito_geral(){
+	return this.guarda_atrito;
+}
+}
+
+export class classe_palco{
+
+constructor (div, movel_central) {
+	
+	this.tabuleiro = div;
+	this.central = movel_central;
+	this.borda_scroll_x = 15; // percentual da tela proibida para o movel ficar (e portanto eh preciso fazer scroll)
+	this.borda_scroll_y = 15;
+	this.tabuleiro.style.top = 0 + "px";
+	this.tabuleiro.style.left = 0 + "px";
+	
+}
+
+corrige_palco() {
+	var dx = 0;
+	var dy = 0;
+
+	var largura_tela = document.body.clientWidth;
+	var  altura_tela = document.body.clientHeight;
+
+
+// as posicoes  abaixo se referem aa posicao do movel
+	var posicao_no_div_x_left =   parseInt(this.central.lista_de_fantasias[this.central.fantasia - 1].getBoundingClientRect().left); 
+	var posicao_no_div_x_right =  parseInt(this.central.lista_de_fantasias[this.central.fantasia - 1].getBoundingClientRect().right); 
+	var posicao_no_div_y_top =    parseInt(this.central.lista_de_fantasias[this.central.fantasia - 1].getBoundingClientRect().top); 
+	var posicao_no_div_y_bottom = parseInt(this.central.lista_de_fantasias[this.central.fantasia - 1].getBoundingClientRect().bottom); 
+
+	var posicao_na_tela_x_left  =  posicao_no_div_x_left +   parseInt( this.tabuleiro.style.left.replace("px","")); 
+	var posicao_na_tela_x_right =  posicao_no_div_x_right +  parseInt( this.tabuleiro.style.left.replace("px","")); 
+	var posicao_na_tela_y_top =    posicao_no_div_y_top +    parseInt( this.tabuleiro.style.top.replace("px","")); 
+	var posicao_na_tela_y_bottom = posicao_no_div_y_bottom + parseInt( this.tabuleiro.style.top.replace("px","")); 
+
+	var borda_proibida_x =  largura_tela * this.borda_scroll_x/100;
+	var borda_proibida_y =   altura_tela * this.borda_scroll_y/100;
+
+	if ( posicao_na_tela_x_left < borda_proibida_x ) {dx = ( borda_proibida_x - posicao_na_tela_x_left );}
+	if ( posicao_na_tela_x_right > largura_tela - borda_proibida_x ) {dx = ( (largura_tela - borda_proibida_x) - posicao_na_tela_x_right );}
+
+	if ( posicao_na_tela_y_top < borda_proibida_y ) {dy = ( borda_proibida_y - posicao_na_tela_y_top );}
+	if ( posicao_na_tela_y_bottom > altura_tela - borda_proibida_y ) {dy = ( (altura_tela - borda_proibida_y) - posicao_na_tela_y_bottom );}
+
+	this.tabuleiro.style.left = parseInt(this.tabuleiro.style.left.replace("px","")) + dx + "px";
+	this.tabuleiro.style.top  = parseInt(this.tabuleiro.style.top.replace("px","") )  + dy + "px";
+}
+
+}
+
+
 
 export class movel {
    estado="indefinido";
 
 constructor (id, arquivo, nome_fantasia, controle){
+	this.controle = controle;
 	this.automatiza=null;
 	this.automatiza_giros=null;
 	
@@ -70,9 +154,9 @@ constructor (id, arquivo, nome_fantasia, controle){
 	this.id = id;
 	this.delta_t=10; // ms
 
-	this.atrito = controle.atrito;
+	this.guarda_atrito = controle.atrito_geral;
 
-	this.massa=1;
+	this.massa=0.5;
 
 	this.guarda_vx=0;
 	this.guarda_vy=0;
@@ -91,15 +175,22 @@ constructor (id, arquivo, nome_fantasia, controle){
 	
 	this.conta_giros=0;
 
-	this.largura_container=document.body.clientWidth;
-	this.altura_container=document.body.clientHeight;
+	this.largura_container=document.getElementById("principal").clientWidth;
+	this.altura_container=document.getElementById("principal").clientHeight;
 	this.guarda_largura_percentual=100;
 	this.guarda_altura_percentual=100;
 	this.guarda_posicao_percentual_x = 50;
 	this.guarda_posicao_percentual_y = 50;
 	this.acrescenta_fantasia(arquivo, nome_fantasia);
-	controle.objetos_em_cena.push(this);
 
+}
+
+set atrito(valor) {
+	this.guarda_atrito = valor;
+}
+
+get atrito() {
+	return this.guarda_atrito;
 }
 
 set Fx(valor) {
@@ -131,7 +222,7 @@ impulso (fx,fy) {
 }
 
 atualiza_fantasia() {
-
+if (this.lista_de_fantasias.length < 1) {return;}
 	if (this.velho_fantasia != this.fantasia) {
 		if ( this.velho_fantasia >0 ) { this.lista_de_fantasias[this.velho_fantasia - 1].style.visibility = "hidden";}
 		this.lista_de_fantasias[this.fantasia - 1].style.visibility = "visible";
@@ -213,10 +304,23 @@ rotaciona (graus){
 }
 
 posiciona_percentual(x,y){
-	this.lista_de_fantasias[this.fantasia - 1].style.top=((this.altura_container) - (this.altura_container) * y/100) - this.lista_de_fantasias[this.fantasia - 1].height/2;
-	this.lista_de_fantasias[this.fantasia - 1].style.left=this.largura_container * x/100 - this.lista_de_fantasias[this.fantasia - 1].width/2;
+	if (this.largura_container >= this.altura_container) {
+		var fator_x = 100;
+		var fator_y = this.altura_container / this.largura_container *100;
+	}
+
+	if (this.largura_container < this.altura_container) {
+		var fator_y = 100;
+		var fator_x = this.largura_container / this.altura_container * 100;
+	}
+
 	this.guarda_posicao_percentual_x=x;
 	this.guarda_posicao_percentual_y=y;
+
+if (this.lista_de_fantasias.length > 0) {
+	this.lista_de_fantasias[this.fantasia - 1].style.top= Math.round(((this.altura_container) - (this.altura_container) * y/ fator_y ) - this.lista_de_fantasias[this.fantasia - 1].height/2) + "px";
+	this.lista_de_fantasias[this.fantasia - 1].style.left=Math.round(this.largura_container * x/fator_x - this.lista_de_fantasias[this.fantasia - 1].width/2) + "px";
+}
 	this.atualiza_fantasia();
 
 }
@@ -226,9 +330,9 @@ posiciona_percentual(x,y){
 tamanho_percentual(x,y){
 	this.guarda_largura_percentual=x;
 	this.guarda_altura_percentual=y;
-	console.log(this.lista_de_fantasias[0]);
-	console.log(this.fantasia);
-	this.lista_de_fantasias[this.fantasia - 1].height = this.altura * y/100;
+	//console.log(this.lista_de_fantasias[0]);
+	//console.log(this.fantasia);
+	this.lista_de_fantasias[this.fantasia - 1].height = this.altura * y/100 ;
 	this.lista_de_fantasias[this.fantasia - 1].width  = this.largura * x/100;
 	this.posiciona_percentual(this.posicao_percentual_x, this.posicao_percentual_y);
 	this.atualiza_fantasia();
@@ -241,7 +345,7 @@ gira(delta_graus, giros){
 	
 	this.automatiza_giros = setInterval(function ()
 			{ 
-				console.log(that.rotacao);
+				//console.log(that.rotacao);
 				if ( that.conta_giros < parseFloat(giros) ) {
 					that.rotacao = that.rotacao + parseFloat(delta_graus);
 					that.conta_giros++;
@@ -263,15 +367,15 @@ verifica_se_bateu (){
 	for (i=0; i < this.lista_de_detecao.length; i++) {
 		let objeto=this.lista_de_detecao[i];
 		//console.log(objeto);
-		let l1x = objeto.lista_de_fantasias[objeto.fantasia -1].getBoundingClientRect().left;
-		let l1y = objeto.lista_de_fantasias[objeto.fantasia -1].getBoundingClientRect().top;
-		let r1x = objeto.lista_de_fantasias[objeto.fantasia -1].getBoundingClientRect().right;
-		let r1y = objeto.lista_de_fantasias[objeto.fantasia -1].getBoundingClientRect().bottom;
+		let l1x = parseInt(objeto.lista_de_fantasias[objeto.fantasia -1].getBoundingClientRect().left);
+		let l1y = parseInt(objeto.lista_de_fantasias[objeto.fantasia -1].getBoundingClientRect().top);
+		let r1x = parseInt(objeto.lista_de_fantasias[objeto.fantasia -1].getBoundingClientRect().right);
+		let r1y = parseInt(objeto.lista_de_fantasias[objeto.fantasia -1].getBoundingClientRect().bottom);
 		
-		let l2x = this.lista_de_fantasias[this.fantasia - 1].getBoundingClientRect().left;
-		let l2y = this.lista_de_fantasias[this.fantasia - 1].getBoundingClientRect().top;
-		let r2x = this.lista_de_fantasias[this.fantasia - 1].getBoundingClientRect().right;
-		let r2y = this.lista_de_fantasias[this.fantasia - 1].getBoundingClientRect().bottom;
+		let l2x = parseInt(this.lista_de_fantasias[this.fantasia - 1].getBoundingClientRect().left);
+		let l2y = parseInt(this.lista_de_fantasias[this.fantasia - 1].getBoundingClientRect().top);
+		let r2x = parseInt(this.lista_de_fantasias[this.fantasia - 1].getBoundingClientRect().right);
+		let r2y = parseInt(this.lista_de_fantasias[this.fantasia - 1].getBoundingClientRect().bottom);
 		//console.log( doOverlap( l1x, l1y,  r1x, r1y,  l2x, l2y,  r2x, r2y) );
 
 		if ( doOverlap( l1x, l1y,  r1x, r1y,  l2x, l2y,  r2x, r2y) ) { console.log("bateu");}
@@ -316,8 +420,9 @@ acrescenta_fantasia(arquivo, nome){
 	fantasy.style.pai = this;
 	
 	fantasy.style.visibility="hidden";
-	document.body.appendChild(fantasy);
+	document.getElementById("principal").appendChild(fantasy);
 	fantasy.id=this.id + "_" + nome;
+	fantasy.style.display="block";
 	fantasy.style.position = "absolute";
 	let that = this;
 	fantasy.onerror=function (){that.nao_achou_imagem()}
@@ -325,20 +430,24 @@ acrescenta_fantasia(arquivo, nome){
 
 	fantasy.src=arquivo;
 
-	fantasy.addEventListener("click", ()=> {
-		controle.selecionado = that;
-          });
+fantasy.addEventListener("click", ()=> {
+	controle.selecionado = that;
+	controle.central = that;
+        }, true);
 
 
 	fantasy.alt="erro: "+arquivo+" não encontrado";
-	this.lista_de_fantasias.push(fantasy);
-	this.velho_fantasia = this.fantasia;
-	this.fantasia = this.lista_de_fantasias.length;
 
-	this.largura = fantasy.width;
-	this.altura  = fantasy.height;
-	this.tamanho_percentual(this.guarda_largura_percentual, this.guarda_largura_percentual);
-
+    fantasy.addEventListener("load", function () {
+	that.controle.pronto_para_animar = true;
+	that.controle.objetos_em_cena.push(that);
+	that.lista_de_fantasias.push(fantasy);
+	that.velho_fantasia = that.fantasia;
+	that.fantasia = that.lista_de_fantasias.length;
+		that.largura = this.width;
+		that.altura  = this.height;
+		that.tamanho_percentual(that.guarda_largura_percentual, that.guarda_largura_percentual);
+	});
 }
 
 
