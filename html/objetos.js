@@ -32,7 +32,7 @@ constructor (div){
 	this.pronto_para_animar=false; // espera ficar pronto para animar
 	this.guarda_atrito      = 1; // coeficiente de atrito para todos os objetos deslizantes
 	this.objetos_em_cena = []; // todos os objetos em cena que precisam ser animados
-	this.delta_t_animacao=10; // tempo de repeticao do algoritmo de anomacao (setInterval)
+	this.delta_t_animacao=50; // tempo de repeticao do algoritmo de anomacao (setInterval)
 	this.delta_t_simulacao= 0.01; // tempo de simulacao
 	let that = this;
 	this.palco = null;
@@ -70,7 +70,6 @@ let i;
 			objeto.guarda_ay = - objeto.guarda_vy * objeto.atrito;
 			objeto.posicao_percentual_x = objeto.posicao_percentual_x + objeto.guarda_vx * this.delta_t_simulacao;
 			objeto.posicao_percentual_y = objeto.posicao_percentual_y + objeto.guarda_vy * this.delta_t_simulacao;
-			if (objeto == this.central ) {this.palco.corrige_palco();}
 	
 	
 	} // fim for
@@ -112,21 +111,20 @@ corrige_palco() {
 
 	var largura_tela = document.body.clientWidth;
 	var  altura_tela = document.body.clientHeight;
-
+	var mobile = this.central.lista_de_fantasias[this.central.fantasia - 1];
 
 // as posicoes  abaixo se referem aa posicao do movel
-	var posicao_no_div_x_left =   parseInt(this.central.lista_de_fantasias[this.central.fantasia - 1].getBoundingClientRect().left); 
-	var posicao_no_div_x_right =  parseInt(this.central.lista_de_fantasias[this.central.fantasia - 1].getBoundingClientRect().right); 
-	var posicao_no_div_y_top =    parseInt(this.central.lista_de_fantasias[this.central.fantasia - 1].getBoundingClientRect().top); 
-	var posicao_no_div_y_bottom = parseInt(this.central.lista_de_fantasias[this.central.fantasia - 1].getBoundingClientRect().bottom); 
+	var posicao_no_div_x_left =   parseInt(mobile.style.left.replace("px","")); 
+	var posicao_no_div_x_right =  parseInt(mobile.style.left.replace("px","")) + mobile.width; 
+	var posicao_no_div_y_top =    parseInt( mobile.style.top.replace("px","")); 
+	var posicao_no_div_y_bottom = parseInt( mobile.style.top.replace("px","")) + mobile.height; 
 
 	var posicao_na_tela_x_left  =  posicao_no_div_x_left +   parseInt( this.tabuleiro.style.left.replace("px","")); 
 	var posicao_na_tela_x_right =  posicao_no_div_x_right +  parseInt( this.tabuleiro.style.left.replace("px","")); 
 	var posicao_na_tela_y_top =    posicao_no_div_y_top +    parseInt( this.tabuleiro.style.top.replace("px","")); 
 	var posicao_na_tela_y_bottom = posicao_no_div_y_bottom + parseInt( this.tabuleiro.style.top.replace("px","")); 
-
-	var borda_proibida_x =  largura_tela * this.borda_scroll_x/100;
-	var borda_proibida_y =   altura_tela * this.borda_scroll_y/100;
+	var borda_proibida_x =  Math.round(largura_tela * this.borda_scroll_x/100);
+	var borda_proibida_y =  Math.round( altura_tela * this.borda_scroll_y/100);
 
 	if ( posicao_na_tela_x_left < borda_proibida_x ) {dx = ( borda_proibida_x - posicao_na_tela_x_left );}
 	if ( posicao_na_tela_x_right > largura_tela - borda_proibida_x ) {dx = ( (largura_tela - borda_proibida_x) - posicao_na_tela_x_right );}
@@ -320,6 +318,7 @@ posiciona_percentual(x,y){
 if (this.lista_de_fantasias.length > 0) {
 	this.lista_de_fantasias[this.fantasia - 1].style.top= Math.round(((this.altura_container) - (this.altura_container) * y/ fator_y ) - this.lista_de_fantasias[this.fantasia - 1].height/2) + "px";
 	this.lista_de_fantasias[this.fantasia - 1].style.left=Math.round(this.largura_container * x/fator_x - this.lista_de_fantasias[this.fantasia - 1].width/2) + "px";
+	if (this == this.controle.central ) {this.controle.palco.corrige_palco();}
 }
 	this.atualiza_fantasia();
 
