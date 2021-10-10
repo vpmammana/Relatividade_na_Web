@@ -37,11 +37,12 @@ constructor (div){
 	let that = this;
 	this.palco = null;
 	this.guarda_central = this.selecionado; // por enquanto null e soh pode ser definido pela propriedade
+	this.espacamento_superior = 0;
 }
 
 set central(objeto){
 	this.guarda_central = objeto;
-	if (this.palco == null ) {this.palco = new classe_palco(this.tabuleiro, objeto);}
+	if (this.palco == null ) {this.palco = new classe_palco(this.tabuleiro, objeto, this);}
 	else {this.palco.central = objeto;}
 }
 
@@ -94,7 +95,7 @@ get atrito_geral(){
 
 export class classe_palco{
 
-constructor (div, movel_central) {
+constructor (div, movel_central, controle) {
 	
 	this.tabuleiro = div;
 	this.central = movel_central;
@@ -102,15 +103,16 @@ constructor (div, movel_central) {
 	this.borda_scroll_y = 15;
 	this.tabuleiro.style.top = 0 + "px";
 	this.tabuleiro.style.left = 0 + "px";
+	this.controle = controle;
 	
 }
 
 corrige_palco() {
 	var dx = 0;
 	var dy = 0;
-
-	var largura_tela = document.body.clientWidth;
-	var  altura_tela = document.body.clientHeight;
+	
+	var largura_tela = document.body.clientWidth;  
+	var  altura_tela = document.body.clientHeight - this.controle.espacamento_superior; // para descontar o menu horizontal no topo da pagina 
 	var mobile = this.central.lista_de_fantasias[this.central.fantasia - 1];
 
 // as posicoes  abaixo se referem aa posicao do movel
@@ -129,7 +131,7 @@ corrige_palco() {
 	if ( posicao_na_tela_x_left < borda_proibida_x ) {dx = ( borda_proibida_x - posicao_na_tela_x_left );}
 	if ( posicao_na_tela_x_right > largura_tela - borda_proibida_x ) {dx = ( (largura_tela - borda_proibida_x) - posicao_na_tela_x_right );}
 
-	if ( posicao_na_tela_y_top < borda_proibida_y ) {dy = ( borda_proibida_y - posicao_na_tela_y_top );}
+	if ( posicao_na_tela_y_top < borda_proibida_y + this.controle.espacamento_superior ) {dy = ( (borda_proibida_y + this.controle.espacamento_superior) - posicao_na_tela_y_top );}
 	if ( posicao_na_tela_y_bottom > altura_tela - borda_proibida_y ) {dy = ( (altura_tela - borda_proibida_y) - posicao_na_tela_y_bottom );}
 
 	this.tabuleiro.style.left = parseInt(this.tabuleiro.style.left.replace("px","")) + dx + "px";

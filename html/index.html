@@ -16,6 +16,31 @@ img {
 	display: block;
 }
 
+table {
+	padding: 0px;
+	border-spacing: 0px;
+	border-collapse: collapse;
+}
+
+tr,td {
+}
+
+input[type="button"] {
+	font-size: 1em;
+	line-height: 1em;
+	padding: 1px;
+	background-color: red;
+	color: black;
+}
+
+input[type="text"]{
+    font-size: 1em;
+    line-height: 1em;
+    display: inline-block;
+    padding: 0px;
+    border: none;
+}
+
 body{
   background-color: blue;
   background: -moz-radial-gradient(center, ellipse cover, #0047ea 0%, #151515 100%);
@@ -24,10 +49,27 @@ body{
   overflow: hidden;
 }
 
+#comandos {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: 10%;
+	padding: 0px;
+	border: 1px solid white;	
+	box-sizing: border-box;
+	z-index: 100;
+	background-color: lightblue;
+	background: -moz-radial-gradient(center, ellipse cover, #0047ea 0%, #151515 100%);
+	background: radial-gradient(#0047ea, #151515);
+
+
+}
+
 
 #principal {
 	position: absolute;
-	top: 0px;
+	top: 11%;
 	left: 0px;
 	width: 3000px;
 	height: 3000px;
@@ -39,17 +81,18 @@ body{
 </style>
 
 <body>
-
-<div id="principal">
-<table width="10%">
+<div id="comandos">
+<table width="10%" cellspacing="0">
 	<tr>
 		<td><input type="button" value="Gira Móvel" onclick="window.controle.selecionado.gira(document.getElementById('delta_graus').value,document.getElementById('passos').value);"></td>
-		<td><input id="delta_graus" size="4" type="text" placeholder="delta_graus"></td>
+		<td><input id="delta_graus" size="4" type="text"  placeholder="delta_graus"></td>
 		<td><input id="passos" type="text" size="4" placeholder="passos"></td>
 		<td width="30px"></td>
 		<td width="100px"></td>
 		<td><input type="button" value="Impulso X" onclick="window.controle.selecionado.Fx = document.getElementById('impulso_X').value;"></td>
 		<td><input id="impulso_X" type="text" size="4" placeholder="impulso_X"></td>
+		<td><input type="button" value="Para o Giro" onclick="window.controle.selecionado.para_giro();"></td><td></td><td></td>
+		<td><input type="button" value="Ação" onclick="acao();"></td><td></td><td></td>
 	</tr>
 	<tr>
 		<td><input type="button" value="Deslizar" onclick="window.controle.selecionado.desliza( document.getElementById('x_percentual').value, document.getElementById('y_percentual').value, document.getElementById('passos_posicao').value);"></td>
@@ -59,18 +102,13 @@ body{
 		<td width="100px"></td>
 		<td><input type="button" value="Impulso Y" onclick="window.controle.selecionado.Fy = document.getElementById('impulso_Y').value;"></td>
 		<td><input id="impulso_Y" type="text" size="4" placeholder="impulso_Y"></td>
-	
-	</tr>
-	<tr>
-		<td><input type="button" value="Para o Giro" onclick="window.controle.selecionado.para_giro();"></td><td></td><td></td>
-	</tr>
-	<tr>
-		<td><input type="button" value="Ação" onclick="acao();"></td><td></td><td></td>
-	</tr>
-	<tr>
-		<td><input type="button" value="Para Deslizamento" onclick="window.controle.selecionado.para_desliza();"></td><td></td><td></td>
+	<td><input type="button" value="Para Deslizamento" onclick="window.controle.selecionado.para_desliza();"></td><td></td><td></td>
+
 	</tr>
 </table>
+</div>
+
+<div id="principal">
 
 
 </div>
@@ -89,14 +127,16 @@ window.movel2.desliza(-0.1,0,295);
 
 </script>
 
-    <script type="module">
-    import { movel } from "./objetos.js";
+<script type="module">
+	import { movel } from "./objetos.js";
 	import { controle_geral } from "./objetos.js";
 
-window.addEventListener("load", function () {
-
+window.addEventListener("load", 
+function () {
 
 window.controle = new controle_geral(document.getElementById("principal"));
+window.controle.espacamento_superior = document.getElementById("comandos").clientHeight;
+
    
 setTimeout(function (){
    window.movel1 = new movel("amarelo", "../fantasias/carrinho_amarelo1.png", "fantasia1", window.controle);
