@@ -27,8 +27,8 @@ function doOverlap( l1x, l1y,  r1x, r1y,  l2x, l2y,  r2x, r2y) {
 export class controle_geral {
 
 constructor (div){
-	this.forca_x = 1000;
-	this.forca_y = 1000;
+	this.forca_x = 100;
+	this.forca_y = 100;
 	
 
 	this.tabuleiro = div;
@@ -37,6 +37,7 @@ constructor (div){
 	this.guarda_atrito       = 1; // coeficiente de atrito para todos os objetos deslizantes
 	this.guarda_atrito_freio = 30;
 	this.objetos_em_cena = []; // todos os objetos em cena que precisam ser animados
+	this.objetos_fixos = []; // todos os objetos que nao precisam ser animados -> cenario
 	this.delta_t_animacao=50; // tempo de repeticao do algoritmo de anomacao (setInterval)
 	this.delta_t_simulacao= 0.01; // tempo de simulacao
 	let that = this;
@@ -129,7 +130,42 @@ constructor (div, movel_central, controle) {
 	this.tabuleiro.style.top = 0 + "px";
 	this.tabuleiro.style.left = 0 + "px";
 	this.controle = controle;
+	this.cenario_json = null;
 	
+}
+
+carrega_objetos_cenario(){ // carrega os objetos do cenario a partir do json que foi lido no servidor. Estes objetos nao serao animados (serao fixos)
+
+var i;
+for (i=0; i<this.cenario_json.pontos.length; i++){
+	var ponto=this.cenario_json.pontos[i];
+	var objeto_do_cenario = new movel("parede_bloco_"+i, "../fantasias/parede_pequena.jpeg", "parede_bloco_"+i, this.controle, "fixo");
+console.log(i+") L:"+ponto.left_percentual+" R:"+ponto.right_percentual+" T:"+ponto.top_percentual+" B"+ponto.bottom_percentual+ " W:" +  Math.abs(ponto.right_percentual -  ponto.left_percentual)+ " H:"+Math.abs(ponto.top_percentual - ponto.bottom_percentual));	
+	let largura = Math.abs(ponto.right_percentual -  ponto.left_percentual  );
+	let altura  = Math.abs(ponto.top_percentual   -  ponto.bottom_percentual);
+	objeto_do_cenario.posicao_percentual_x = ponto.left_percentual + largura / 2;
+	objeto_do_cenario.posicao_percentual_y = ponto.top_percentual + altura /2;
+	objeto_do_cenario.largura_percentual = largura ;
+	objeto_do_cenario.altura_percentual =  altura;
+
+}
+}
+
+carrega_json_cenario(){
+
+
+var resposta="";
+var url='../php/read_json.php?arquivo=mapa_aristeu_percentual.json';
+
+let that = this;
+var oReq=new XMLHttpRequest();
+           oReq.open("GET", url, false);
+           oReq.onload = function (e) {
+                     that.cenario_json=JSON.parse(oReq.responseText);
+		     setTimeout(function () {that.carrega_objetos_cenario();}, 50);
+                     }
+           oReq.send();
+
 }
 
 adiciona_event_listeners(){
@@ -138,7 +174,7 @@ this.tabuleiro.focus();
 let that=this;
 this.tabuleiro.addEventListener( "keydown", 
 function (e) { 
-console.log(e.key);
+//console.log(e.key);
 if (e.key == "ArrowRight") { that.central.Fx =   that.controle.forca_x;}
 if (e.key == "ArrowLeft")  { that.central.Fx = - that.controle.forca_x;}
 if (e.key == "ArrowUp")    { that.central.Fy =   that.controle.forca_y;}
@@ -190,10 +226,12 @@ corrige_palco() {
 
 
 
+
 export class movel {
    estado="indefinido";
 
-constructor (id, arquivo, nome_fantasia, controle){
+constructor (id, arquivo, nome_fantasia, controle, tipo_objeto, tipo_tag){ // tipo tag determina se eh um IMG ou um DIV que guarda a fantasia
+	this.tipo_tag = tipo_tag;
 	this.controle = controle;
 	this.automatiza=null;
 	this.automatiza_giros=null;
@@ -214,7 +252,11 @@ constructor (id, arquivo, nome_fantasia, controle){
 	this.guarda_Fx=0;
 	this.guarda_Fy=0;
 		
-	
+	this.max_tentativas_de_definir_tamanho = 30;
+	this.tentativas_de_definir_tamanho = 0;	
+	this.max_tentativas_de_definir_posicao = 30;
+	this.tentativas_de_definir_posicao = 0;	
+
 	this.lista_de_detecao=[];
 	this.lista_de_fantasias=[];
 	this.velho_fantasia=0;
@@ -230,6 +272,7 @@ constructor (id, arquivo, nome_fantasia, controle){
 	this.guarda_altura_percentual=100;
 	this.guarda_posicao_percentual_x = 50;
 	this.guarda_posicao_percentual_y = 50;
+	this.tipo_objeto = tipo_objeto;
 	this.acrescenta_fantasia(arquivo, nome_fantasia);
 
 }
@@ -316,6 +359,7 @@ get altura_percentual (){
 
 set largura_percentual (value){
 	this.tamanho_percentual(value,this.guarda_altura_percentual);
+	//console.log("largura: "+value + " guarda largura:"+ this.guarda_largura_percentual);
 }
 
 set altura_percentual (value){
@@ -345,6 +389,7 @@ achou_imagem(){
 
 nao_achou_imagem(){
 	this.estado="falhou";
+	alert("Nao conseguiu carregar imagem.");
 }
 
 rotaciona (graus){
@@ -367,25 +412,41 @@ posiciona_percentual(x,y){
 	this.guarda_posicao_percentual_y=y;
 
 if (this.lista_de_fantasias.length > 0) {
+	this.tentativas_de_definir_posicao = 0;
 	this.lista_de_fantasias[this.fantasia - 1].style.top= Math.round(((this.altura_container) - (this.altura_container) * y/ fator_y ) - this.lista_de_fantasias[this.fantasia - 1].height/2) + "px";
 	this.lista_de_fantasias[this.fantasia - 1].style.left=Math.round(this.largura_container * x/fator_x - this.lista_de_fantasias[this.fantasia - 1].width/2) + "px";
-	if (this == this.controle.central ) {this.controle.palco.corrige_palco();}
-}
+	if (this == this.controle.central && this != null && this != undefined ) {this.controle.palco.corrige_palco();}
 	this.atualiza_fantasia();
+} else {
+	this.tentativas_de_definir_posicao++; // caso a lista de fantasias esteja vazia, pode ser por conta de demorar para carregar do servidor, entao tem que tentar + 1 vez
+	if (this.tentativas_de_definir_posicao < this.max_tentativas_de_definir_posicao) { let that=this; setTimeout(function () {that.posiciona_percentual(x,y);}, 50)}
+	else {alert("Nao foi possivel definir a posicao da fantasia. Provavelmente o tempo de carga da fantasia estah muito longo.");}
+
+}
 
 }
 
 
 
 tamanho_percentual(x,y){
+//console.log("tentativa: "+ this.tentativas_de_definir_tamanho);
 	this.guarda_largura_percentual=x;
 	this.guarda_altura_percentual=y;
 	//console.log(this.lista_de_fantasias[0]);
 	//console.log(this.fantasia);
-	this.lista_de_fantasias[this.fantasia - 1].height = this.altura * y/100 ;
-	this.lista_de_fantasias[this.fantasia - 1].width  = this.largura * x/100;
+if (this.fantasia > 0) {
+	this.tentativas_de_definir_tamanho = 0;
+	this.lista_de_fantasias[this.fantasia - 1].height = Math.round(this.altura_container * y/100 );
+	this.lista_de_fantasias[this.fantasia - 1].width  = Math.round(this.largura_container * x/100);
 	this.posiciona_percentual(this.posicao_percentual_x, this.posicao_percentual_y);
 	this.atualiza_fantasia();
+}
+else {
+	this.tentativas_de_definir_tamanho++;
+	if (this.tentativas_de_definir_tamanho < this.max_tentativas_de_definir_tamanho) { let that=this; setTimeout(function () {that.tamanho_percentual(x,y);}, 50)}
+	else {alert("Nao foi possivel definir o tamanho da fantasia. Provavelmente o tempo de carga da fantasia estah muito longo.");}
+}
+
 }
 
 gira(delta_graus, giros){
@@ -461,8 +522,11 @@ para_desliza() {
 
 proxima_fantasia(){
 	this.fantasia++;
+	if (this.fantasia > this.lista_de_fantasias.length) {this.fantasia = 1;} // verificar isso aqui. nao testado
 	this.atualiza_fantasia();	
 }
+
+
 
 acrescenta_fantasia(arquivo, nome){
 
@@ -489,8 +553,9 @@ fantasy.addEventListener("click", ()=> {
 	fantasy.alt="erro: "+arquivo+" não encontrado";
 
     fantasy.addEventListener("load", function () {
-	that.controle.pronto_para_animar = true;
-	that.controle.objetos_em_cena.push(that);
+	that.controle.pronto_para_animar = true; // isso aqui provavelmente estah errado porque refere-se apenas aa fantasia corrente do presente movel. Tem muitos moveis. (resposta: Eh que basta um estar pronto para animar, portanto nao precisa esperar todos)
+	if (that.tipo_objeto == "movel")   { that.controle.objetos_em_cena.push(that);}
+	if (that.tipo_objeto == "fixo") { that.controle.objetos_fixos.push(that);}
 	that.lista_de_fantasias.push(fantasy);
 	that.velho_fantasia = that.fantasia;
 	that.fantasia = that.lista_de_fantasias.length;

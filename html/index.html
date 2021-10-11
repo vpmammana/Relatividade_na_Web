@@ -136,21 +136,21 @@ function () {
 
 window.controle = new controle_geral(document.getElementById("principal"));
 window.controle.espacamento_superior = document.getElementById("comandos").clientHeight;
-
+window.controle.palco.carrega_json_cenario();
    
 setTimeout(function (){
-   window.movel1 = new movel("amarelo", "../fantasias/carrinho_amarelo1.png", "fantasia1", window.controle);
+   window.movel1 = new movel("amarelo", "../fantasias/carrinho_amarelo1.png", "fantasia1", window.controle, "movel");
 }, 1000);
 
 setTimeout(function (){
-        window.movel2 = new movel("vermelho", "../fantasias/carrinho_vermelho1.png", "fantasia1", window.controle);
+        window.movel2 = new movel("vermelho", "../fantasias/carrinho_vermelho1.png", "fantasia1", window.controle, "movel");
 }, 1500);
 
 
 setTimeout(function (){
 	
-	window.movel1.largura_percentual=20;
-	window.movel1.altura_percentual=20;
+	window.movel1.largura_percentual=3;
+	window.movel1.altura_percentual=3;
 
 	window.movel1.acrescenta_fantasia("../fantasias/carrinho_amarelo2.png", "fantasia2");
 	window.movel1.acrescenta_fantasia("../fantasias/carrinho_amarelo3.png", "fantasia3");
@@ -158,10 +158,10 @@ setTimeout(function (){
 	//window.movel1.acrescenta_fantasia("../fantasias/carrinho_vermelho1.png", "fantasia4");
     console.log(window.movel1)
 	window.movel1.posicao_percentual_x=10;
-	window.movel1.posicao_percentual_y=98;
+	window.movel1.posicao_percentual_y=90;
 
-	window.movel2.largura_percentual=20;
-	window.movel2.altura_percentual=20;
+	window.movel2.largura_percentual=3;
+	window.movel2.altura_percentual=3;
 	window.movel1.acrescenta_em_detecao(window.movel2);
 	window.movel2.posicao_percentual_x=90;
 	window.movel2.posicao_percentual_y=30;

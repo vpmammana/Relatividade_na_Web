@@ -1,0 +1,38 @@
+<html>
+	<head>
+		<title>
+Teste de leitura de JSON usando Javascript
+		</title>
+	</head>
+	<style>
+	</style>
+
+<body>
+
+<script>
+
+var json;
+
+function busca_json(){
+var resposta="";
+var url='read_json.php?arquivo=mapa_aristeu_percentual.json';
+var oReq=new XMLHttpRequest();
+           oReq.open("GET", url, false);
+           oReq.onload = function (e) {
+                     json=oReq.responseText;
+             document.body.innerHTML=json+"<br><br>";
+                     }
+           oReq.send();
+}
+
+busca_json();
+
+var obj=JSON.parse(json);
+var i;
+for (i=0; i<obj.pontos.length; i++){
+document.body.innerHTML = document.body.innerHTML + obj.pontos[i].left;
+}
+</script>
+</body>
+</html>
+
