@@ -1,3 +1,15 @@
+// cuidado quando coloca animacao em objetos fixos. Por algum motivo corrompe o posicionamento. Eu acredito que seja um problema de timing
+// cuidado com o timing de acrescenta_objeto_x
+
+function intersect(a, b) { // retorna a interseccao de duas arrays, obtida do stackoverflow https://stackoverflow.com/questions/16227197/compute-intersection-of-two-arrays-in-javascript/16227294#16227294
+    var t;
+    if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+    return a.filter(function (e) {
+        return b.indexOf(e) > -1;
+    });
+}
+
+
 function doOverlap( l1x, l1y,  r1x, r1y,  l2x, l2y,  r2x, r2y) {
 //console.log(l1x+ " - " + l1y+ " - " +  r1x+ " - " + r1y+ " - " +  l2x+ " - " + l2y+ " - " +  r2x+ " - " + r2y);
  	// fonte: geeksforgeeks
@@ -23,12 +35,104 @@ function doOverlap( l1x, l1y,  r1x, r1y,  l2x, l2y,  r2x, r2y) {
         return true;
     }
 
+class sistema_de_colisao {
+
+constructor (largura_tabuleiro, altura_tabuleiro, controle){
+	this.controle = controle;
+	this.largura_tabuleiro = largura_tabuleiro;
+	this.altura_tabuleiro = altura_tabuleiro;
+	this.matriz_colisao_x = [];
+	this.matriz_colisao_y = [];
+	this.inicializa_matrizes();
+
+}
+
+inicializa_matrizes(){
+	let i;
+  	for (i=0; i < this.largura_tabuleiro + 1; i++) {
+		let objetos=[];
+		this.matriz_colisao_x.push(objetos);
+	}
+	let j;
+  	for (j=0; j < this.altura_tabuleiro + 1; j++) {
+		let objetos=[];
+		this.matriz_colisao_y.push(objetos);
+	}
+}
+
+
+preenche_matriz_x (){ // preenche a partir de uma lista de objetos cuja colisao tem que ser monitorada. Mas pode ser preenchido de outra forma
+// este metodo de preenchimento requer que toda a lista de objetos que colidem seja conhecida a priori e tem que zerar as matrizes
+	let i,j;
+	this.matriz_colisao_x.length = 0;
+	for (i=0; i<this.largura_tabuleiro; i++){
+	let objetos = [];
+	  for (j=0; j < this.controle.objetos_que_colidem.length; j++) {
+		let objeto = this.controle.objetos_que_colidem[j];
+		let img_no_div = objeto.lista_de_fantasias[objeto.fantasia - 1];
+		if ( i >= img_no_div.style.left.replace("px","") && i <= (img_no_div.style.left.replace("px","") + img_no_div.width))
+			{ objetos.push(j); }
+	  }
+	this.matriz_colisao_x.push(objetos);
+	}
+	
+}
+
+preenche_matriz_y (){ // preenche a partir de uma lista de objetos cuja colisao tem que ser monitorada. Mas pode ser preenchido de outra forma
+// este metodo de preenchimento requer que toda a lista de objetos que colidem seja conhecida a priori
+
+	let i,j;
+	this.matriz_colisao_y.length = 0;
+	for (i=0; i<this.altura_tabuleiro; i++){
+	let objetos = [];
+	  for (j=0; j < this.controle.objetos_que_colidem.length; j++) {
+		let objeto = this.controle.objetos_que_colidem[j];
+		let img_no_div = objeto.lista_de_fantasias[objeto.fantasia - 1];
+		if ( i >= img_no_div.style.top.replace("px","") && i <= (img_no_div.style.top.replace("px","") + img_no_div.height))
+			{ objetos.push(j); }
+	  }
+	this.matriz_colisao_y.push(objetos);
+	}
+	
+}
+
+acrescenta_objeto_x (left, right, id){
+	console.log(left + " - " + right + " - " + id);
+	let i;
+	for (i = left; i<= right; i++) {
+		this.matriz_colisao_x[i].push(id);
+	}
+
+}
+
+acrescenta_objeto_y (top, bottom, id){
+console.log(top + " % " + " % " + bottom );
+	let i;
+	for (i = top; i<= bottom; i++) {
+		this.matriz_colisao_y[i].push(id);
+		}
+}
+
+retorna_colisao(x,y){
+
+console.log("x");
+console.log(this.matriz_colisao_x[x]);
+console.log("y");
+console.log(this.matriz_colisao_y[y]);
+
+return intersect(this.matriz_colisao_x[x], this.matriz_colisao_y[y]);
+
+}
+
+
+} // fim class sistema_de_colisao
 
 export class controle_geral {
 
 constructor (div){
 	this.forca_x = 100;
 	this.forca_y = 100;
+	this.auto_increment=0; // usado para gerar ids
 	
 
 	this.tabuleiro = div;
@@ -38,7 +142,8 @@ constructor (div){
 	this.guarda_atrito_freio = 30;
 	this.objetos_em_cena = []; // todos os objetos em cena que precisam ser animados
 	this.objetos_fixos = []; // todos os objetos que nao precisam ser animados -> cenario
-	this.delta_t_animacao=50; // tempo de repeticao do algoritmo de anomacao (setInterval)
+	this.objetos_que_colidem = [];
+	this.delta_t_animacao=100; // tempo de repeticao do algoritmo de anomacao (setInterval)
 	this.delta_t_simulacao= 0.01; // tempo de simulacao
 	let that = this;
 	this.palco = null;
@@ -46,6 +151,7 @@ constructor (div){
 	this.espacamento_superior = 0;
 	this.palco = new classe_palco(this.tabuleiro, null, this);
 	this.palco.adiciona_event_listeners();
+	this.sistema_de_colisao = new sistema_de_colisao (this.tabuleiro.offsetWidth, this.tabuleiro.offsetHeight, this)
 }
 
 set central(objeto){
@@ -60,25 +166,26 @@ get central() {
 
 inicia_animacao(){
 	let that=this;
-	this.animacao = setInterval(function () { that.animar();}, that.delta_t_animacao);
-
+	//this.animacao = setInterval(function () { that.animar();}, that.delta_t_animacao);
+	this.animar(this);
 }
 
-animar() {
-if (this.palco == null) { return;}
-if ( this.pronto_para_animar == false) { return;} // ainda nao tem os imgs para animar
-if (this.guarda_central == null) {this.guarda_central = this.selecionado;}
+animar(that) {
+requestAnimationFrame(function () {that.animar(that);});
+if (that.palco == null) { return;}
+if ( that.pronto_para_animar == false) { return;} // ainda nao tem os imgs para animar
+if (that.guarda_central == null) {that.guarda_central = that.selecionado;}
 let i;
 
-	for (i=0; i < this.objetos_em_cena.length; i++){
+	for (i=0; i < that.objetos_em_cena.length; i++){
 		
-		let objeto = this.objetos_em_cena[i];
-			objeto.guarda_vx = objeto.guarda_vx + objeto.guarda_ax * this.delta_t_simulacao;
+		let objeto = that.objetos_em_cena[i];
+			objeto.guarda_vx = objeto.guarda_vx + objeto.guarda_ax * that.delta_t_simulacao;
 			objeto.guarda_ax = - objeto.guarda_vx * (objeto.atrito + (objeto.freio * objeto.guarda_atrito_freio));
-			objeto.guarda_vy = objeto.guarda_vy + objeto.guarda_ay * this.delta_t_simulacao;
+			objeto.guarda_vy = objeto.guarda_vy + objeto.guarda_ay * that.delta_t_simulacao;
 			objeto.guarda_ay = - objeto.guarda_vy * (objeto.atrito + (objeto.freio * objeto.guarda_atrito_freio));
-			objeto.posicao_percentual_x = objeto.posicao_percentual_x + objeto.guarda_vx * this.delta_t_simulacao;
-			objeto.posicao_percentual_y = objeto.posicao_percentual_y + objeto.guarda_vy * this.delta_t_simulacao;
+			objeto.posicao_percentual_x = objeto.posicao_percentual_x + objeto.guarda_vx * that.delta_t_simulacao;
+			objeto.posicao_percentual_y = objeto.posicao_percentual_y + objeto.guarda_vy * that.delta_t_simulacao;
 			objeto.freio = 0;
 	
 	
@@ -134,20 +241,24 @@ constructor (div, movel_central, controle) {
 	
 }
 
-carrega_objetos_cenario(){ // carrega os objetos do cenario a partir do json que foi lido no servidor. Estes objetos nao serao animados (serao fixos)
 
+
+carrega_objetos_cenario(){ // carrega os objetos do cenario a partir do json que foi lido no servidor. Estes objetos nao serao animados (serao fixos)
 var i;
 for (i=0; i<this.cenario_json.pontos.length; i++){
 	var ponto=this.cenario_json.pontos[i];
-	var objeto_do_cenario = new movel("parede_bloco_"+i, "../fantasias/parede_pequena.jpeg", "parede_bloco_"+i, this.controle, "fixo");
-console.log(i+") L:"+ponto.left_percentual+" R:"+ponto.right_percentual+" T:"+ponto.top_percentual+" B"+ponto.bottom_percentual+ " W:" +  Math.abs(ponto.right_percentual -  ponto.left_percentual)+ " H:"+Math.abs(ponto.top_percentual - ponto.bottom_percentual));	
+	var objeto_do_cenario = new movel("parede_bloco_"+i, "../fantasias/parede_pequena.jpeg", "parede_bloco_"+i, this.controle, "fixo", "img","sofre_colisao", this.chama_de_volta);
+	//console.log(i+") auto: "+this.controle.auto_increment);
 	let largura = Math.abs(ponto.right_percentual -  ponto.left_percentual  );
 	let altura  = Math.abs(ponto.top_percentual   -  ponto.bottom_percentual);
-	objeto_do_cenario.posicao_percentual_x = ponto.left_percentual + largura / 2;
-	objeto_do_cenario.posicao_percentual_y = ponto.top_percentual + altura /2;
-	objeto_do_cenario.largura_percentual = largura ;
-	objeto_do_cenario.altura_percentual =  altura;
-
+//console.log(this.controle.objetos_fixos.length - 1 + "] L: " + objeto_do_cenario.posicao_percentual_x + " T:"+objeto_do_cenario.posicao_percentual_y + " H:" + objeto_do_cenario.altura_percentual + " W:" + objeto_do_cenario.largura_percentual  );
+//console.log(this.controle.objetos_fixos.length - 1 + ") L: " + ponto.left_percentual + " R:"+ponto.right_percentual + " T:" + ponto.top_percentual + " B:" + ponto.bottom_percentual + " W:" + largura + " H:" + altura );
+	objeto_do_cenario.posicao_percentual_x = parseFloat(ponto.left_percentual) + parseFloat(largura) / 2;
+	objeto_do_cenario.posicao_percentual_y = parseFloat(ponto.top_percentual) + parseFloat(altura) /2;
+	objeto_do_cenario.largura_percentual = parseFloat(largura) ;
+	objeto_do_cenario.altura_percentual =  parseFloat(altura);
+//console.log(this.controle.objetos_fixos.length - 1 + "> L: " + objeto_do_cenario.posicao_percentual_x + " T:"+objeto_do_cenario.posicao_percentual_y + " H:" + objeto_do_cenario.altura_percentual + " W:" + objeto_do_cenario.largura_percentual  );
+	
 }
 }
 
@@ -162,23 +273,23 @@ var oReq=new XMLHttpRequest();
            oReq.open("GET", url, false);
            oReq.onload = function (e) {
                      that.cenario_json=JSON.parse(oReq.responseText);
-		     setTimeout(function () {that.carrega_objetos_cenario();}, 50);
+		     setTimeout(function () {that.carrega_objetos_cenario();}, 100);
                      }
            oReq.send();
 
 }
 
 adiciona_event_listeners(){
-this.tabuleiro.tabIndex=0;
-this.tabuleiro.focus();
+//document.body.tabuleiro.tabIndex=0;
+//document.body.tabuleiro.focus();
 let that=this;
-this.tabuleiro.addEventListener( "keydown", 
+document.body.addEventListener( "keydown", 
 function (e) { 
 //console.log(e.key);
-if (e.key == "ArrowRight") { that.central.Fx =   that.controle.forca_x;}
-if (e.key == "ArrowLeft")  { that.central.Fx = - that.controle.forca_x;}
-if (e.key == "ArrowUp")    { that.central.Fy =   that.controle.forca_y;}
-if (e.key == "ArrowDown") { that.central.Fy = - that.controle.forca_y;}
+if (e.key == "ArrowRight") { console.log(e.key); that.central.Fx =   that.controle.forca_x; that.controle.palco.tabuleiro.focus();}
+if (e.key == "ArrowLeft")  { console.log(e.key); that.central.Fx = - that.controle.forca_x; that.controle.palco.tabuleiro.focus();}
+if (e.key == "ArrowUp")    { console.log(e.key); that.central.Fy =   that.controle.forca_y; that.controle.palco.tabuleiro.focus();}
+if (e.key == "ArrowDown")  { console.log(e.key); that.central.Fy = - that.controle.forca_y; that.controle.palco.tabuleiro.focus();}
 if (e.key == " ") { that.central.freio = 1;}
 
 
@@ -188,7 +299,7 @@ if (e.key == " ") { that.central.freio = 1;}
 }
 
 
-corrige_palco() {
+corrige_palco(x_itz, y_itz) {
 
 	if (this.central == null) { console.log("corrige_palco nao estah rodando porque o central nao foi definido"); return;}
 	if (this.central.lista_de_fantasias.length < 1) {console.log("O central nao tem fantasias."); return;}
@@ -198,12 +309,12 @@ corrige_palco() {
 	var largura_tela = document.body.clientWidth;  
 	var  altura_tela = document.body.clientHeight - this.controle.espacamento_superior; // para descontar o menu horizontal no topo da pagina 
 	var mobile = this.central.lista_de_fantasias[this.central.fantasia - 1];
-
+//	mobile.style.transition = "none";
 // as posicoes  abaixo se referem aa posicao do movel
-	var posicao_no_div_x_left =   parseInt(mobile.style.left.replace("px","")); 
-	var posicao_no_div_x_right =  parseInt(mobile.style.left.replace("px","")) + mobile.width; 
-	var posicao_no_div_y_top =    parseInt( mobile.style.top.replace("px","")); 
-	var posicao_no_div_y_bottom = parseInt( mobile.style.top.replace("px","")) + mobile.height; 
+	var posicao_no_div_x_left =   parseInt(x_itz); 
+	var posicao_no_div_x_right =  parseInt(x_itz) + mobile.width; 
+	var posicao_no_div_y_top =    parseInt(y_itz); 
+	var posicao_no_div_y_bottom = parseInt(y_itz) + mobile.height; 
 
 	var posicao_na_tela_x_left  =  posicao_no_div_x_left +   parseInt( this.tabuleiro.style.left.replace("px","")); 
 	var posicao_na_tela_x_right =  posicao_no_div_x_right +  parseInt( this.tabuleiro.style.left.replace("px","")); 
@@ -217,27 +328,49 @@ corrige_palco() {
 
 	if ( posicao_na_tela_y_top < borda_proibida_y + this.controle.espacamento_superior ) {dy = ( (borda_proibida_y + this.controle.espacamento_superior) - posicao_na_tela_y_top );}
 	if ( posicao_na_tela_y_bottom > altura_tela - borda_proibida_y ) {dy = ( (altura_tela - borda_proibida_y) - posicao_na_tela_y_bottom );}
+	if (dx !=0 ) {
+		this.tabuleiro.style.left = parseInt(this.tabuleiro.style.left.replace("px","")) + dx + "px";
+		}
+		
 
-	this.tabuleiro.style.left = parseInt(this.tabuleiro.style.left.replace("px","")) + dx + "px";
-	this.tabuleiro.style.top  = parseInt(this.tabuleiro.style.top.replace("px","") )  + dy + "px";
+	
+	if (dy !=0  ) {
+		this.tabuleiro.style.top = parseInt(this.tabuleiro.style.top.replace("px","")) + dy + "px";
+		}
+		
+		window.requestAnimationFrame(function (){
+			mobile.style.top  = y_itz + "px";
+			mobile.style.left = x_itz + "px" ;
+		mobile.style.visibility="visible";});
+		
+		
+
+
+
+		//this.tabuleiro.style.top  = parseInt(this.tabuleiro.style.top.replace("px","") )  + dy + "px";
+	
+//mobile.style.visibility="visible";
+
 }
 
 }
-
-
 
 
 export class movel {
    estado="indefinido";
 
-constructor (id, arquivo, nome_fantasia, controle, tipo_objeto, tipo_tag){ // tipo tag determina se eh um IMG ou um DIV que guarda a fantasia
+constructor (id, arquivo, nome_fantasia, controle, tipo_objeto, tipo_tag, sofre_colisao, chama_de_volta){ // tipo tag determina se eh um IMG ou um DIV que guarda a fantasia
+	this.chama_de_volta = chama_de_volta;
 	this.tipo_tag = tipo_tag;
 	this.controle = controle;
 	this.automatiza=null;
 	this.automatiza_giros=null;
 	
 	this.guarda_rotacao = 0;
-	this.id = id;
+
+	this.controle.auto_increment++;
+	this.id = this.controle.auto_increment;
+
 	this.delta_t=10; // ms
 
 	this.guarda_atrito = controle.atrito_geral;
@@ -273,6 +406,15 @@ constructor (id, arquivo, nome_fantasia, controle, tipo_objeto, tipo_tag){ // ti
 	this.guarda_posicao_percentual_x = 50;
 	this.guarda_posicao_percentual_y = 50;
 	this.tipo_objeto = tipo_objeto;
+	this.sofre_colisao = sofre_colisao;
+	//console.log("colisaoi2: "+sofre_colisao);
+	if (this.tipo_objeto == "movel")   { this.controle.objetos_em_cena.push(this);}
+	if (this.tipo_objeto == "fixo") { this.controle.objetos_fixos.push(this);}
+	if (this.sofre_colisao == "sofre_colisao") { let temp = this.controle.objetos_que_colidem.push(this);
+							this.id_colisao  = temp - 1;
+							}
+	else {this.id_colisao = -1000;}
+
 	this.acrescenta_fantasia(arquivo, nome_fantasia);
 
 }
@@ -398,6 +540,8 @@ rotaciona (graus){
 }
 
 posiciona_percentual(x,y){
+//console.log("Tentativa: " + this.tentativas_de_definir_posicao);
+	// talvez fosse legal pegar de novo o valor da largura do container caso o usuario mude o tamanho da janela depois que o jogo comecou
 	if (this.largura_container >= this.altura_container) {
 		var fator_x = 100;
 		var fator_y = this.altura_container / this.largura_container *100;
@@ -412,14 +556,28 @@ posiciona_percentual(x,y){
 	this.guarda_posicao_percentual_y=y;
 
 if (this.lista_de_fantasias.length > 0) {
+
+	let x_itz = Math.round(this.largura_container * x/fator_x - this.lista_de_fantasias[this.fantasia - 1].width/2);
+	let y_itz = Math.round(((this.altura_container) - (this.altura_container) * y/ fator_y ) - this.lista_de_fantasias[this.fantasia - 1].height/2);
+	
+	if (this.tipo_objeto == "movel") {this.lista_de_fantasias[this.fantasia - 1].style.transition = "all 0.05s linear";} // se o objeto eh fixo e demora para carregar, essa animacao dah problema... 
 	this.tentativas_de_definir_posicao = 0;
-	this.lista_de_fantasias[this.fantasia - 1].style.top= Math.round(((this.altura_container) - (this.altura_container) * y/ fator_y ) - this.lista_de_fantasias[this.fantasia - 1].height/2) + "px";
-	this.lista_de_fantasias[this.fantasia - 1].style.left=Math.round(this.largura_container * x/fator_x - this.lista_de_fantasias[this.fantasia - 1].width/2) + "px";
-	if (this == this.controle.central && this != null && this != undefined ) {this.controle.palco.corrige_palco();}
+	
+	if (this == this.controle.central && this != null && this != undefined ) {
+		this.controle.palco.corrige_palco(x_itz, y_itz);
+
+	}
+	else
+	{
+		this.lista_de_fantasias[this.fantasia - 1].style.top  = y_itz + "px"; 
+		this.lista_de_fantasias[this.fantasia - 1].style.left = x_itz + "px" ;
+	}
+	
+
 	this.atualiza_fantasia();
 } else {
 	this.tentativas_de_definir_posicao++; // caso a lista de fantasias esteja vazia, pode ser por conta de demorar para carregar do servidor, entao tem que tentar + 1 vez
-	if (this.tentativas_de_definir_posicao < this.max_tentativas_de_definir_posicao) { let that=this; setTimeout(function () {that.posiciona_percentual(x,y);}, 50)}
+	if (this.tentativas_de_definir_posicao < this.max_tentativas_de_definir_posicao) { let that=this; setTimeout(function () {that.posiciona_percentual(x,y);}, 100)}
 	else {alert("Nao foi possivel definir a posicao da fantasia. Provavelmente o tempo de carga da fantasia estah muito longo.");}
 
 }
@@ -429,7 +587,7 @@ if (this.lista_de_fantasias.length > 0) {
 
 
 tamanho_percentual(x,y){
-//console.log("tentativa: "+ this.tentativas_de_definir_tamanho);
+//console.log("tentativa tamanho: "+ this.tentativas_de_definir_tamanho);
 	this.guarda_largura_percentual=x;
 	this.guarda_altura_percentual=y;
 	//console.log(this.lista_de_fantasias[0]);
@@ -443,7 +601,7 @@ if (this.fantasia > 0) {
 }
 else {
 	this.tentativas_de_definir_tamanho++;
-	if (this.tentativas_de_definir_tamanho < this.max_tentativas_de_definir_tamanho) { let that=this; setTimeout(function () {that.tamanho_percentual(x,y);}, 50)}
+	if (this.tentativas_de_definir_tamanho < this.max_tentativas_de_definir_tamanho) { let that=this; setTimeout(function () {that.tamanho_percentual(x,y);}, 100)}
 	else {alert("Nao foi possivel definir o tamanho da fantasia. Provavelmente o tempo de carga da fantasia estah muito longo.");}
 }
 
@@ -532,7 +690,8 @@ acrescenta_fantasia(arquivo, nome){
 
 	let fantasy=document.createElement("img");
 	fantasy.style.pai = this;
-	
+	//fantasy.style.transition="all 0.05s linear";
+	//fantasy.style.transitionTimingFunction="linear";	
 	fantasy.style.visibility="hidden";
 	document.getElementById("principal").appendChild(fantasy);
 	fantasy.id=this.id + "_" + nome;
@@ -553,16 +712,26 @@ fantasy.addEventListener("click", ()=> {
 	fantasy.alt="erro: "+arquivo+" não encontrado";
 
     fantasy.addEventListener("load", function () {
+
 	that.controle.pronto_para_animar = true; // isso aqui provavelmente estah errado porque refere-se apenas aa fantasia corrente do presente movel. Tem muitos moveis. (resposta: Eh que basta um estar pronto para animar, portanto nao precisa esperar todos)
-	if (that.tipo_objeto == "movel")   { that.controle.objetos_em_cena.push(that);}
-	if (that.tipo_objeto == "fixo") { that.controle.objetos_fixos.push(that);}
 	that.lista_de_fantasias.push(fantasy);
 	that.velho_fantasia = that.fantasia;
 	that.fantasia = that.lista_de_fantasias.length;
 		that.largura = this.width;
 		that.altura  = this.height;
 		that.tamanho_percentual(that.guarda_largura_percentual, that.guarda_largura_percentual);
-	});
+if (that.sofre_colisao == "sofre_colisao"){ // cuidado com o timing desse if. Pode ser que ele ocorra antes de saber a posicao do IMG
+setTimeout(function (){
+console.log("id_colisao: "+that.id_colisao);
+	that.controle.sistema_de_colisao.acrescenta_objeto_x(parseInt(fantasy.style.left.replace("px","")), parseInt(fantasy.style.left.replace("px","")) + fantasy.width, that.id_colisao);
+	that.controle.sistema_de_colisao.acrescenta_objeto_y(parseInt(fantasy.style.top.replace("px","")), parseInt(fantasy.style.top.replace("px","")) + fantasy.height, that.id_colisao);	
+
+}, 100);
+
+}
+
+},false);
+
 }
 
 

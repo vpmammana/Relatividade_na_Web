@@ -124,6 +124,7 @@ window.movel2.desliza(-0.1,0,295);
 
 }
 
+document.getElementById("principal").addEventListener("focusout", function (e) {alert(e.activeElement);});
 
 </script>
 
@@ -139,11 +140,11 @@ window.controle.espacamento_superior = document.getElementById("comandos").clien
 window.controle.palco.carrega_json_cenario();
    
 setTimeout(function (){
-   window.movel1 = new movel("amarelo", "../fantasias/carrinho_amarelo1.png", "fantasia1", window.controle, "movel");
+   window.movel1 = new movel("amarelo", "../fantasias/carrinho_amarelo1.png", "fantasia1", window.controle, "movel", "img","sofre_colisao");
 }, 1000);
 
 setTimeout(function (){
-        window.movel2 = new movel("vermelho", "../fantasias/carrinho_vermelho1.png", "fantasia1", window.controle, "movel");
+        window.movel2 = new movel("vermelho", "../fantasias/carrinho_vermelho1.png", "fantasia1", window.controle, "movel", "img","sofre_colisao");
 }, 1500);
 
 
