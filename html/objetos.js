@@ -238,8 +238,8 @@ let i;
 			if (Math.abs(objeto.guarda_vy) < 0.003) { objeto.guarda_vy = 0;}
 
 			if ( objeto.guarda_vx !=0 || objeto.guarda_vy !=0 ) { // para otimizar performance
-				objeto.velho_x = objeto.posicao_percentual_x; // importante para a colisao: vai determinar a direcao do "ricochete"
-				objeto.velho_y = objeto.posicao_percentual_y;
+				objeto.velho_x = parseInt(objeto.lista_de_fantasias[objeto.fantasia -1].style.left.replace("px","")); // importante para a colisao: vai determinar a direcao do "ricochete"
+				objeto.velho_y = parseInt(objeto.lista_de_fantasias[objeto.fantasia -1].style.top.replace("px",""));
 	
 				objeto.posicao_percentual_x = objeto.posicao_percentual_x + objeto.guarda_vx * that.delta_t_simulacao;
 				objeto.posicao_percentual_y = objeto.posicao_percentual_y + objeto.guarda_vy * that.delta_t_simulacao;
@@ -478,8 +478,8 @@ constructor (id, arquivo, nome_fantasia, controle, tipo_objeto, tipo_tag, sofre_
 	this.guarda_posicao_percentual_x = 50;
 	this.guarda_posicao_percentual_y = 50;
 
-	this.velho_x = this.guarda_posicao_percentual_x; 
-	this.velho_y = this.guarda_posicao_percentual_y; 
+	this.velho_x = 0; 
+	this.velho_y = 0; 
 
 	this.tipo_objeto = tipo_objeto;
 	this.sofre_colisao = sofre_colisao;
@@ -605,6 +605,44 @@ achou_imagem(){
 	this.estado="sucesso";
 }
 
+check_entrou_pelo_sul(indice, x_in, y_in, x_out, y_out){ // x/y_in -> ponto que penetrou o obstaculo ; x/y_out -> ponto que nao penetrou o obstaculo
+// indice indica o indice do obstaculo atingido no contexto da lista objetos_que_colidem
+let objeto = this.controle.objetos_que_colidem[indice];
+let p1_x = objeto.esquerda;
+let p1_y = objeto.baixo;
+let q1_x = objeto.direita;
+let q1_y = objeto.baixo;
+return interseccao_retas(p1_x, p1_y, q1_x, q1_y, x_in, y_in, x_out, y_out);
+}
+
+check_entrou_pelo_norte(indice, x_in, y_in, x_out, y_out){ // x/y_in -> ponto que penetrou o obstaculo ; x/y_out -> ponto que nao penetrou o obstacul
+let objeto = this.controle.objetos_que_colidem[indice];
+let p1_x = objeto.esquerda;
+let p1_y = objeto.topo;
+let q1_x = objeto.direita;
+let q1_y = objeto.topo;
+return interseccao_retas(p1_x, p1_y, q1_x, q1_y, x_in, y_in, x_out, y_out);
+}
+
+check_entrou_pelo_leste(indice, x_in, y_in, x_out, y_out){ // x/y_in -> ponto que penetrou o obstaculo ; x/y_out -> ponto que nao penetrou o obstacul
+let objeto = this.controle.objetos_que_colidem[indice];
+let p1_x = objeto.direita;
+let p1_y = objeto.topo;
+let q1_x = objeto.direita;
+let q1_y = objeto.baixo;
+return interseccao_retas(p1_x, p1_y, q1_x, q1_y, x_in, y_in, x_out, y_out);
+}
+
+check_entrou_pelo_oeste(indice, x_in, y_in, x_out, y_out){ // x/y_in -> ponto que penetrou o obstaculo ; x/y_out -> ponto que nao penetrou o obstacul
+let objeto = this.controle.objetos_que_colidem[indice];
+let p1_x = objeto.esquerda;
+let p1_y = objeto.topo;
+let q1_x = objeto.esquerda;
+let q1_y = objeto.baixo;
+return interseccao_retas(p1_x, p1_y, q1_x, q1_y, x_in, y_in, x_out, y_out);
+
+}
+
 
 retorna_colisao_movel() { // retorna qual velocidade deve ser invertida: x ou y?
 let that = this;
@@ -622,20 +660,59 @@ let itz_bax_esq = this.elemento_colisao_bax_esq.filter( function(item) { return 
 this.elemento_colisao_bax_dir = this.controle.sistema_de_colisao.retorna_colisao(this.direita, this.baixo);
 let itz_bax_dir = this.elemento_colisao_bax_dir.filter( function(item) { return item !== that.id_colisao;});
 
+let x_out, x_in, y_out, y_in, indice;
 
-if (this.elemento_colisao_top_esq.length >0) {
-	let interseccao1 = intersect( itz_top_esq, itz_top_dir )
-	if ( interseccao1.length > 0 ) { console.log("intersecao -> "+interseccao1+" id:"+this.id_colisao); return {kx:1, ky:-1}; }
-	let interseccao2 = intersect( itz_top_esq, itz_bax_esq )
-	if ( interseccao2.length > 0 ) { return {kx:-1, ky:1}; }
+if (this.elemento_colisao_top_esq.length >0) { // isto aqui indica a certeza de que este canto bateu
+		let interseccao1 = intersect( itz_top_esq, itz_top_dir ); // verifica se os dois cantos bateram no mesmo obstaculo. Nesse caso eh facil saber a direcao do ricochete. Isto acelera o algoritmo
+		if ( interseccao1.length > 0 ) { console.log("intersecao -> "+interseccao1+" id:"+this.id_colisao); return {kx:1, ky:-1}; }// 2 cantos no mesmo obstaculo
+		let interseccao2 = intersect( itz_top_esq, itz_bax_esq );
+		if ( interseccao2.length > 0 ) { return {kx:-1, ky:1}; }
+		else { // aqui eh certo que o canto top_esq bateu bateu no obstaculo X e o itz_bax_esq nao bateu no obstaculo X (pode ter batido em outro)
+			indice = this.elemento_colisao_top_esq[0]; // indice do canto que com certeza bateu, no contexto da lista objetos_que_colidem
+			x_in = this.esquerda;
+			y_in = this.topo;
+			x_out = this.velho_x;
+			y_out = this.velho_y;
+			if (   this.check_entrou_pelo_sul(indice, x_in, y_in, x_out, y_out) ) { return {kx:  1,ky: -1}; };
+			if ( this.check_entrou_pelo_leste(indice, x_in, y_in, x_out, y_out) ) { return {kx: -1,ky:  1}; } ;
+		}
 	}
 
 if (this.elemento_colisao_bax_dir.length >0) {
-	let interseccao3 = intersect( itz_top_dir, itz_bax_dir )
-	if ( interseccao3.length > 0 ) { return {kx:-1, ky:1}; }
-	let interseccao4 = intersect( itz_bax_dir, itz_bax_esq )
-	if ( interseccao4.length > 0 ) { return {kx:1, ky:-1}; }
+		let interseccao3 = intersect( itz_top_dir, itz_bax_dir );
+		if ( interseccao3.length > 0 ) { return {kx:-1, ky:1}; }
+		let interseccao4 = intersect( itz_bax_dir, itz_bax_esq );
+		if ( interseccao4.length > 0 ) { return {kx:1, ky:-1}; }
+		else {
+			indice = this.elemento_colisao_bax_dir[0];
+			x_in = this.direita;
+			y_in = this.baixo;
+			x_out = this.velho_x + this.lista_de_fantasias[this.fantasia -1].width;
+			y_out = this.velho_y + this.lista_de_fantasias[this.fantasia -1].height;
+			if ( this.check_entrou_pelo_norte(indice, x_in, y_in, x_out, y_out) ) { return {kx:  1,ky: -1}; };
+			if ( this.check_entrou_pelo_oeste(indice, x_in, y_in, x_out, y_out) ) { return {kx: -1,ky:  1}; } ;
+		}
 	}
+
+if (this.elemento_colisao_top_dir.length >0) { // ainda existe a chace de a colisao ter sido com esse canto... faca a analise logica voce mesmo
+			indice = this.elemento_colisao_top_dir[0];
+			x_in = this.direita;
+			y_in = this.topo;
+			x_out = this.velho_x + this.lista_de_fantasias[this.fantasia -1].width;
+			y_out = this.velho_y;
+			if (   this.check_entrou_pelo_sul(indice, x_in, y_in, x_out, y_out) ) { return {kx:  1,ky: -1}; };
+			if ( this.check_entrou_pelo_oeste(indice, x_in, y_in, x_out, y_out) ) { return {kx: -1,ky:  1}; } ;
+}
+
+if (this.elemento_colisao_bax_esq.length >0) { // ainda existe a chace de a colisao ter sido com esse canto... faca a analise logica voce mesmo
+			indice = this.elemento_colisao_bax_esq[0];
+			x_in = this.esquerda;
+			y_in = this.baixo;
+			x_out = this.velho_x;
+			y_out = this.velho_y + this.lista_de_fantasias[this.fantasia -1].height;
+			if ( this.check_entrou_pelo_norte(indice, x_in, y_in, x_out, y_out) ) { return {kx:  1,ky: -1}; };
+			if ( this.check_entrou_pelo_leste(indice, x_in, y_in, x_out, y_out) ) { return {kx: -1,ky:  1}; } ;
+}
 
 return {kx: 1, ky: 1};
 
