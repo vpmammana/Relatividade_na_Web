@@ -3,11 +3,11 @@ $dir=getcwd();
 $largura=3000;
 $altura=3000;
 
-$numero_linhas=count(file($dir."/mapa_aristeu.txt"));
+$numero_linhas=count(file($dir."/mapa_gigante.txt"));
 $altura_bloco=(int)$altura/$numero_linhas;
 
-$fs_mapa=fopen($dir."/mapa_aristeu.txt","r");
-echo $dir."/mapa_aristeu.txt","r";
+$fs_mapa=fopen($dir."/mapa_gigante.txt","r");
+echo $dir."/mapa_gigante.txt","r";
 $pontos=array();
 
 $conta_linha=0;
@@ -77,7 +77,7 @@ for ($i=0; $i<$tamanho; $i++){
 
 echo "\nTamanho final do Array:".count($pontos);
 $mapa=array("pontos"=>$pontos);
-$fp = fopen('mapa_aristeu_percentual.json', 'w');
+$fp = fopen('mapa_gigante_percentual.json', 'w');
 fwrite($fp, json_encode($mapa,JSON_PRETTY_PRINT));
 fclose($fp);
 

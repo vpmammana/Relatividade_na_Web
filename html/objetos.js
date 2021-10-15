@@ -1,5 +1,46 @@
+// é preciso avaliar se transitio="all 0.05s linear" eh realmente necessario para o this.controle.central... serah que eh? 
 // cuidado quando coloca animacao em objetos fixos. Por algum motivo corrompe o posicionamento. Eu acredito que seja um problema de timing
 // cuidado com o timing de acrescenta_objeto_x
+
+function noSegmento(px, py, qx, qy, rx, ry){
+
+        if (qx <= Math.max(px,rx) && qx >= Math.min(px, rx) && qy <= Math.max(py, ry) && qy >= Math.min(py, ry)) return true;
+        return false;
+
+}
+
+function orientacao(px, py, qx, qy, rx, ry){
+        var val = (qy - py) * (rx - qx) - (qx - px) * (ry - qy);
+
+        if (val == 0) {return 0;}
+
+        return (val>0)? 1: 2;
+
+}
+
+function interseccao_retas(p1_x, p1_y, q1_x, q1_y, p2_x, p2_y, q2_x, q2_y){
+// esta funcao verifica se a reta formada entre p1-q1 intersecta a reta formada entre p2-q2
+        var o1=orientacao(p1_x, p1_y, q1_x, q1_y, p2_x, p2_y);
+        var o2=orientacao(p1_x, p1_y, q1_x, q1_y, q2_x, q2_y);
+        var o3=orientacao(p2_x, p2_y, q2_x, q2_y, p1_x, p1_y);
+        var o4=orientacao(p2_x, p2_y, q2_x, q2_y, q1_x, q1_y);
+
+        if (o1 != o2 && o3 != o4){
+                return true;
+        }
+
+        // Casos Especiais
+
+        if (o1 == 0 && noSegmento(p1_x, p1_y, p2_x, p2_y, q1_x, q1_y)) {return true;}
+        if (o2 == 0 && noSegmento(p1_x, p1_y, q2_x, q2_y, q1_x, q1_y)) {return true;}
+        if (o3 == 0 && noSegmento(p2_x, p2_y, p1_x, p1_y, q2_x, q2_y)) {return true;}
+        if (o4 == 0 && noSegmento(p2_x, p2_y, q1_x, q1_y, q2_x, q2_y)) {return true;}
+
+        return false;
+}
+
+
+
 
 function intersect(a, b) { // retorna a interseccao de duas arrays, obtida do stackoverflow https://stackoverflow.com/questions/16227197/compute-intersection-of-two-arrays-in-javascript/16227294#16227294
     var t;
@@ -43,7 +84,7 @@ constructor (largura_tabuleiro, altura_tabuleiro, controle){
 	this.altura_tabuleiro = altura_tabuleiro;
 	this.matriz_colisao_x = [];
 	this.matriz_colisao_y = [];
-	this.inicializa_matrizes();
+	//this.inicializa_matrizes(); Nao precisa inicializar as matrizes se for usar o metodo preenche. Nao eh proibido, mas eh inutil
 
 }
 
@@ -70,7 +111,7 @@ preenche_matriz_x (){ // preenche a partir de uma lista de objetos cuja colisao 
 	  for (j=0; j < this.controle.objetos_que_colidem.length; j++) {
 		let objeto = this.controle.objetos_que_colidem[j];
 		let img_no_div = objeto.lista_de_fantasias[objeto.fantasia - 1];
-		if ( i >= img_no_div.style.left.replace("px","") && i <= (img_no_div.style.left.replace("px","") + img_no_div.width))
+		if ( i >= parseInt(img_no_div.style.left.replace("px","")) && i <= (parseInt(img_no_div.style.left.replace("px","")) + img_no_div.width))
 			{ objetos.push(j); }
 	  }
 	this.matriz_colisao_x.push(objetos);
@@ -88,7 +129,7 @@ preenche_matriz_y (){ // preenche a partir de uma lista de objetos cuja colisao 
 	  for (j=0; j < this.controle.objetos_que_colidem.length; j++) {
 		let objeto = this.controle.objetos_que_colidem[j];
 		let img_no_div = objeto.lista_de_fantasias[objeto.fantasia - 1];
-		if ( i >= img_no_div.style.top.replace("px","") && i <= (img_no_div.style.top.replace("px","") + img_no_div.height))
+		if ( i >= parseInt(img_no_div.style.top.replace("px","")) && i <= (parseInt(img_no_div.style.top.replace("px","")) + img_no_div.height))
 			{ objetos.push(j); }
 	  }
 	this.matriz_colisao_y.push(objetos);
@@ -115,10 +156,15 @@ console.log(top + " % " + " % " + bottom );
 
 retorna_colisao(x,y){
 
-console.log("x");
-console.log(this.matriz_colisao_x[x]);
-console.log("y");
-console.log(this.matriz_colisao_y[y]);
+//console.log("x");
+//console.log(this.matriz_colisao_x[x]);
+//console.log("y");
+//console.log(this.matriz_colisao_y[y]);
+
+if (x < 0) {x =1;}
+if (x >= this.controle.tabuleiro.clientWidth) { x = this.controle.tabuleiro.clientWidth -1;}
+if (y < 0) {y = 1;}
+if (y >= this.controle.tabuleiro.clientHeight) { y = this.controle.tabuleiro.clientHeight -1;}
 
 return intersect(this.matriz_colisao_x[x], this.matriz_colisao_y[y]);
 
@@ -166,6 +212,9 @@ get central() {
 
 inicia_animacao(){
 	let that=this;
+	this.sistema_de_colisao.preenche_matriz_x();
+	this.sistema_de_colisao.preenche_matriz_y();
+
 	//this.animacao = setInterval(function () { that.animar();}, that.delta_t_animacao);
 	this.animar(this);
 }
@@ -184,8 +233,21 @@ let i;
 			objeto.guarda_ax = - objeto.guarda_vx * (objeto.atrito + (objeto.freio * objeto.guarda_atrito_freio));
 			objeto.guarda_vy = objeto.guarda_vy + objeto.guarda_ay * that.delta_t_simulacao;
 			objeto.guarda_ay = - objeto.guarda_vy * (objeto.atrito + (objeto.freio * objeto.guarda_atrito_freio));
-			objeto.posicao_percentual_x = objeto.posicao_percentual_x + objeto.guarda_vx * that.delta_t_simulacao;
-			objeto.posicao_percentual_y = objeto.posicao_percentual_y + objeto.guarda_vy * that.delta_t_simulacao;
+
+			if (Math.abs(objeto.guarda_vx) < 0.003) { objeto.guarda_vx = 0;} // mata um resquicio de velocidade o que vai melhorar a performance
+			if (Math.abs(objeto.guarda_vy) < 0.003) { objeto.guarda_vy = 0;}
+
+			if ( objeto.guarda_vx !=0 || objeto.guarda_vy !=0 ) { // para otimizar performance
+				objeto.velho_x = objeto.posicao_percentual_x; // importante para a colisao: vai determinar a direcao do "ricochete"
+				objeto.velho_y = objeto.posicao_percentual_y;
+	
+				objeto.posicao_percentual_x = objeto.posicao_percentual_x + objeto.guarda_vx * that.delta_t_simulacao;
+				objeto.posicao_percentual_y = objeto.posicao_percentual_y + objeto.guarda_vy * that.delta_t_simulacao;
+				var valores_de_k = objeto.retorna_colisao_movel();
+				objeto.guarda_vx = valores_de_k.kx * objeto.guarda_vx;
+				objeto.guarda_vy = valores_de_k.ky * objeto.guarda_vy;
+
+			}
 			objeto.freio = 0;
 	
 	
@@ -266,7 +328,7 @@ carrega_json_cenario(){
 
 
 var resposta="";
-var url='../php/read_json.php?arquivo=mapa_aristeu_percentual.json';
+var url='../php/read_json.php?arquivo=mapa_gigante_percentual.json';
 
 let that = this;
 var oReq=new XMLHttpRequest();
@@ -396,7 +458,17 @@ constructor (id, arquivo, nome_fantasia, controle, tipo_objeto, tipo_tag, sofre_
 	this.fantasia=0; // zero indica que não tem fantasia
 
 	this.conta_passos=0;
-	
+
+	this.topo      = 0; // top
+	this.baixo     = 0; // bottom
+	this.esquerda  = 0; // left
+	this.direita   = 0; // right
+
+	this.elemento_colisao_top_esq = -1;
+	this.elemento_colisao_top_dir = -1;
+	this.elemento_colisao_bax_esq = -1;
+	this.elemento_colisao_bax_dir = -1;
+
 	this.conta_giros=0;
 
 	this.largura_container=document.getElementById("principal").clientWidth;
@@ -405,6 +477,10 @@ constructor (id, arquivo, nome_fantasia, controle, tipo_objeto, tipo_tag, sofre_
 	this.guarda_altura_percentual=100;
 	this.guarda_posicao_percentual_x = 50;
 	this.guarda_posicao_percentual_y = 50;
+
+	this.velho_x = this.guarda_posicao_percentual_x; 
+	this.velho_y = this.guarda_posicao_percentual_y; 
+
 	this.tipo_objeto = tipo_objeto;
 	this.sofre_colisao = sofre_colisao;
 	//console.log("colisaoi2: "+sofre_colisao);
@@ -510,6 +586,7 @@ set altura_percentual (value){
 
 set posicao_percentual_x (value){
 	this.posiciona_percentual(value,this.guarda_posicao_percentual_y);
+	if (this.id="16") {console.log("carrinho_vermelho: "+value+" property: "+this.posicao_percentual_x )}
 }
 
 set posicao_percentual_y (value){
@@ -528,6 +605,41 @@ achou_imagem(){
 	this.estado="sucesso";
 }
 
+
+retorna_colisao_movel() { // retorna qual velocidade deve ser invertida: x ou y?
+let that = this;
+this.elemento_colisao_top_esq = this.controle.sistema_de_colisao.retorna_colisao(this.esquerda, this.topo);
+console.log(this.elemento_colisao_top_esq);
+let itz_top_esq = this.elemento_colisao_top_esq.filter( function(item) { return item !== that.id_colisao;});
+console.log(" -> "+this.elemento_colisao_top_esq.length);
+
+this.elemento_colisao_top_dir = this.controle.sistema_de_colisao.retorna_colisao(this.direita, this.topo);
+let itz_top_dir = this.elemento_colisao_top_dir.filter( function(item) { return item !== that.id_colisao;});
+
+this.elemento_colisao_bax_esq = this.controle.sistema_de_colisao.retorna_colisao(this.esquerda, this.baixo);
+let itz_bax_esq = this.elemento_colisao_bax_esq.filter( function(item) { return item !== that.id_colisao;});
+
+this.elemento_colisao_bax_dir = this.controle.sistema_de_colisao.retorna_colisao(this.direita, this.baixo);
+let itz_bax_dir = this.elemento_colisao_bax_dir.filter( function(item) { return item !== that.id_colisao;});
+
+
+if (this.elemento_colisao_top_esq.length >0) {
+	let interseccao1 = intersect( itz_top_esq, itz_top_dir )
+	if ( interseccao1.length > 0 ) { console.log("intersecao -> "+interseccao1+" id:"+this.id_colisao); return {kx:1, ky:-1}; }
+	let interseccao2 = intersect( itz_top_esq, itz_bax_esq )
+	if ( interseccao2.length > 0 ) { return {kx:-1, ky:1}; }
+	}
+
+if (this.elemento_colisao_bax_dir.length >0) {
+	let interseccao3 = intersect( itz_top_dir, itz_bax_dir )
+	if ( interseccao3.length > 0 ) { return {kx:-1, ky:1}; }
+	let interseccao4 = intersect( itz_bax_dir, itz_bax_esq )
+	if ( interseccao4.length > 0 ) { return {kx:1, ky:-1}; }
+	}
+
+return {kx: 1, ky: 1};
+
+}
 
 nao_achou_imagem(){
 	this.estado="falhou";
@@ -557,13 +669,17 @@ posiciona_percentual(x,y){
 
 if (this.lista_de_fantasias.length > 0) {
 
-	let x_itz = Math.round(this.largura_container * x/fator_x - this.lista_de_fantasias[this.fantasia - 1].width/2);
-	let y_itz = Math.round(((this.altura_container) - (this.altura_container) * y/ fator_y ) - this.lista_de_fantasias[this.fantasia - 1].height/2);
+	let largura_itz = this.lista_de_fantasias[this.fantasia - 1].width;
+	let  altura_itz = this.lista_de_fantasias[this.fantasia - 1].height;
+
+	let x_itz = Math.round(this.largura_container * x/fator_x - largura_itz/2);
+	let y_itz = Math.round(((this.altura_container) - (this.altura_container) * y/ fator_y ) - altura_itz/2);
 	
-	if (this.tipo_objeto == "movel") {this.lista_de_fantasias[this.fantasia - 1].style.transition = "all 0.05s linear";} // se o objeto eh fixo e demora para carregar, essa animacao dah problema... 
+//	if (this.tipo_objeto == "movel") {this.lista_de_fantasias[this.fantasia - 1].style.transition = "all 0.05s linear";} // se o objeto eh fixo e demora para carregar, essa animacao dah problema... 
 	this.tentativas_de_definir_posicao = 0;
 	
-	if (this == this.controle.central && this != null && this != undefined ) {
+	if (this == this.controle.central && this != null && this != undefined && this !="undefined" ) { // esse if eh para evitar que o movel fique chacoalhando quando bate no final da tela. Talvez com a requestAnimationFrame recem incluido, não precise mais disso (2021_10_14)
+		this.lista_de_fantasias[this.fantasia - 1].style.transition = "all 0.05s linear";
 		this.controle.palco.corrige_palco(x_itz, y_itz);
 
 	}
@@ -573,13 +689,16 @@ if (this.lista_de_fantasias.length > 0) {
 		this.lista_de_fantasias[this.fantasia - 1].style.left = x_itz + "px" ;
 	}
 	
+	this.esquerda = x_itz;
+	this.topo     = y_itz;
+	this.direita  = x_itz + largura_itz;
+	this.baixo    = y_itz + altura_itz;
 
 	this.atualiza_fantasia();
 } else {
 	this.tentativas_de_definir_posicao++; // caso a lista de fantasias esteja vazia, pode ser por conta de demorar para carregar do servidor, entao tem que tentar + 1 vez
 	if (this.tentativas_de_definir_posicao < this.max_tentativas_de_definir_posicao) { let that=this; setTimeout(function () {that.posiciona_percentual(x,y);}, 100)}
 	else {alert("Nao foi possivel definir a posicao da fantasia. Provavelmente o tempo de carga da fantasia estah muito longo.");}
-
 }
 
 }
@@ -720,16 +839,6 @@ fantasy.addEventListener("click", ()=> {
 		that.largura = this.width;
 		that.altura  = this.height;
 		that.tamanho_percentual(that.guarda_largura_percentual, that.guarda_largura_percentual);
-if (that.sofre_colisao == "sofre_colisao"){ // cuidado com o timing desse if. Pode ser que ele ocorra antes de saber a posicao do IMG
-setTimeout(function (){
-console.log("id_colisao: "+that.id_colisao);
-	that.controle.sistema_de_colisao.acrescenta_objeto_x(parseInt(fantasy.style.left.replace("px","")), parseInt(fantasy.style.left.replace("px","")) + fantasy.width, that.id_colisao);
-	that.controle.sistema_de_colisao.acrescenta_objeto_y(parseInt(fantasy.style.top.replace("px","")), parseInt(fantasy.style.top.replace("px","")) + fantasy.height, that.id_colisao);	
-
-}, 100);
-
-}
-
 },false);
 
 }
