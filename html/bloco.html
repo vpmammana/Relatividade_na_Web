@@ -7,25 +7,38 @@
 	</head>
 	<style>
 	#programa {
-		position: absolute;
-		top: 10%;
-		left: 10%;
 		width: 400px;
 		height: 300px;
+		position: absolute;
 		border: 1px solid black;
 		background-color: gray;
 		overflow: scroll;
+		scroll-behavior: smooth;
 	}
 	</style>
 
 <body>
-
+<div id="contem">
+<input id="botao_repeticao" type="button" value="REPETE" onclick="insere_bloco(document.getElementById('programa').style.ponto_de_insercao.elemento_pai, 'repeticao'); ">
+<input id="botao_desvio" type="button" value="SE" onclick="insere_bloco(document.getElementById('programa').style.ponto_de_insercao.elemento_pai, 'desvio'); ">
+<input id="botao_desvio" type="button" value="Fx" onclick="insere_bloco(document.getElementById('programa').style.ponto_de_insercao.elemento_pai, 'Fx'); ">
+<input id="botao_desvio" type="button" value="Fy" onclick="insere_bloco(document.getElementById('programa').style.ponto_de_insercao.elemento_pai, 'Fy'); ">
+<input id="botao_desvio" type="button" value="ESPERA" onclick="insere_bloco(document.getElementById('programa').style.ponto_de_insercao.elemento_pai, 'delay'); ">
 <div id="programa">
-<input type="button" value="nova repeticao" onclick="insere_bloco(document.getElementById('programa').style.ponto_de_insercao.elemento_pai, 'repeticao'); ">
-<input type="button" value="novo se" onclick="insere_bloco(document.getElementById('programa').style.ponto_de_insercao.elemento_pai, 'desvio'); ">
+</div>
 </div>
 
 <script>
+function limpa_todos_blink(config){
+let i;
+
+let lista = document.getElementsByClassName(config.classe_div);
+for (i=0; i < lista.length; i++) {
+	lista[i].style.pai.fim_blink();
+	
+} 
+
+}
 
 //
 
@@ -33,7 +46,7 @@ class configuracoes {
 constructor(elemento_pai){
 	this.fator_reducao = 0.9;
 	this.delta_t_blink = 300;
-	this.font_nome = 15;
+	this.font_nome = 20;
 	this.font_ponto_insercao = 13;
 	this.color_nome = "black";
 	this.background_nome = "";
@@ -44,20 +57,25 @@ constructor(elemento_pai){
 	this.conta_id = 0;
 	this.elemento_pai = elemento_pai;
 	this.esquerda = 10;
-	this.topo = 20;
+	this.topo = 30;
+	this.backgroundcolor_Fx = "red";
+	this.backgroundcolor_Fy = "red";
+	this.backgroundcolor_delay = "white";
 	this.backgroundcolor_repeticao = "yellow";
 	this.backgroundcolor_principal = "blue";
-	this.backgroundcolor_desvio = "red";
+	this.backgroundcolor_desvio = "orange";
 	this.backgroundcolor_insercao = "green";
-	this.backgroundcolor_blink = "orange";
+	this.backgroundcolor_blink = "gray";
 	this.borderradius = "25px";
 	this.topo_nome =    parseInt(this.borderradius)/3;
 	this.esquerda_nome= parseInt(this.borderradius)/3;
 	this.borda = "5px solid black";
+	this.padding_inferior = 20;
 	this.borderradius_insercao = "5px";
 	this.borda_insercao = "2px solid black";
 	this.background = document.body;
 	this.tab = 20;
+	this.classe_div = "instrucao_div";
 }
 }
 
@@ -86,6 +104,7 @@ mostra(baixo){
 retorna_face(){
 
 	let div = document.createElement("div"); 
+	div.className = this.configuracoes.classe_div;
 	div.style.pai = this;
 	div.style.visibility = "visible";
 	//this.elemento_pai.appendChild(div);
@@ -97,7 +116,7 @@ retorna_face(){
 	div.style.borderRadius = this.configuracoes.borderradius_insercao;
 	div.style.border = this.configuracoes.borda_insercao;
 	div.style.top = this.topo + "px";
-	div.innerHTML = "ponto de insercao";
+	div.innerHTML = "&#x25BC Insira, edite ou apague bloco abaixo &#x25BC";
 	div.style.fontSize = this.configuracoes.font_ponto_insercao;
 	div.style.left = this.esquerda + "px" ;
 	div.style.width  = this.guarda_largura + "px";
@@ -119,7 +138,7 @@ inicia_blink_insercao(){
 		}  , that.configuracoes.delta_t_blink);
 } // fim inicia_blink()
 
-fim_blink_insercao(){
+fim_blink(){
 	clearInterval(this.blink);
 	this.face.style.backgroundColor = this.configuracoes.backgroundcolor_insercao;
 } // fim fim_blink()
@@ -133,16 +152,37 @@ fim_blink_insercao(){
 
 constructor (configuracoes, bloco_superior, condicional, esquerda, topo, tipo, altura, largura, elemento_pai){
 	this.configuracoes = configuracoes;
+	if (tipo == "delay") 
+		{
+			this.nome = "Espera <input id='espera_"+this.configuracoes.conta_id+"' class='entrada' type='text' value='10' size='4'/> newtons";
+			this.background_tipo = this.configuracoes.backgroundcolor_delay;
+			this.elemento_parametro =  document.getElementById("espera_"+this.configuracoes.conta_id); 
+		}
+
+	if (tipo == "Fy") 
+		{
+			this.nome = "Fy <input id='Fy_"+this.configuracoes.conta_id+"' class='entrada' type='text' value='10' size='4'/> newtons";
+			this.background_tipo = this.configuracoes.backgroundcolor_Fy; 
+			this.elemento_parametro =  document.getElementById("Fy_"+this.configuracoes.conta_id); 
+		}
+	if (tipo == "Fx") 
+		{
+			this.nome = "Fx <input id='Fx_"+this.configuracoes.conta_id+"' class='entrada' type='text' value='10' size='4'/> newtons";
+			this.background_tipo = this.configuracoes.backgroundcolor_Fx; 
+			this.elemento_parametro =  document.getElementById("Fx_"+this.configuracoes.conta_id); 
+		}
 	
 	if (tipo == "principal") 
 		{
 			this.nome = "principal";
 			this.background_tipo = this.configuracoes.backgroundcolor_principal; 
+			this.elemento_parametro =  document.getElementById("principal_"+this.configuracoes.conta_id); 
 		}
 	if (tipo == "repeticao") 
 		{
-			this.nome = "repete";
+			this.nome = "repete <input id='repeticao_"+this.configuracoes.conta_id+"' class='entrada' type='text' value='10' size='4'/> vezes";
 			this.background_tipo = this.configuracoes.backgroundcolor_repeticao;
+			this.elemento_parametro =  document.getElementById("repeticao_"+this.configuracoes.conta_id); 
 		}
 		
 	if (tipo == "desvio"   ) 
@@ -179,13 +219,13 @@ mostra(baixo){
 	return this.lista_instrucoes();
 }
 
-ativa_ponto_de_insercao(){
+ativa_ponto_de_insercao(posicao){
 	let insertion_largura = (this.guarda_largura * this.configuracoes.fator_reducao) - this.configuracoes.tab;
 	let insertion_altura  = this.configuracoes.altura_insercao;
 
 	let insertion = new ponto_insercao(this.configuracoes.tab, parseInt(this.face.style.titulo.style.height.replace("px","")) + this.topo, insertion_largura, insertion_altura, this, this.configuracoes);
-	this.instrucoes.push(insertion); // sempre comeca com um ponto de insercao
-	this.indice_ponto_de_insercao = this.instrucoes.length - 1;
+	this.instrucoes.splice(posicao,0,insertion); // sempre comeca com um ponto de insercao
+	this.indice_ponto_de_insercao = posicao;
 	return insertion;
 }
 
@@ -200,13 +240,16 @@ insere_instrucao(objeto){
 ////console.log(this.instrucoes);
 //		return;
 //	}
-	this.instrucoes.splice(this.indice_ponto_de_insercao, 0, objeto);
-	this.indice_ponto_de_insercao++;
+	this.instrucoes.splice(this.indice_ponto_de_insercao + 1, 0, objeto);
+	this.indice_ponto_de_blinking = this.indice_ponto_de_insercao + 1;
+	limpa_todos_blink(this.configuracoes);
+	this.instrucoes[this.indice_ponto_de_blinking].inicia_blink();
+//	this.indice_ponto_de_insercao++;
 }
 
 lista_instrucoes(){
 let i;
-let desconto = parseInt(this.face.style.titulo.style.top.replace("px","")) + parseInt(this.face.style.titulo.style.height.replace("px",""));
+let desconto = parseInt(this.face.style.titulo.style.top.replace("px","")) + parseInt(this.face.style.titulo.style.height.replace("px","")) + this.configuracoes.padding_inferior;
 let baixo = desconto ;
 //console.log(baixo);
 for (i=0; i< this.instrucoes.length; i++){
@@ -222,6 +265,7 @@ return baixo;
 
 retorna_face(){
 	let div = document.createElement("div"); 
+	div.className = this.configuracoes.classe_div;
 	div.style.pai = this;
 	div.style.visibility = "visible";
 	//this.elemento_pai.appendChild(div);
@@ -300,48 +344,73 @@ lista[indice_destino] = troca;
 
 }
 
+function isCharNumber(c) {
+  return c >= '0' && c <= '9';
+}
+
 document.addEventListener("keydown",
 function (e){
 
-let pai =  principal.style.ponto_de_insercao.elemento_pai;
+console.log(e.key);
+if (e.target.className == "entrada") {
 
-let velho_ponto_de_blinking = pai.indice_ponto_de_blinking;
+	if (!(e.key == "ArrowUp" || e.key == "ArrowDown")) {return;}
+}
+
+let pai =  programa.style.ponto_de_insercao.elemento_pai;
+
+if (e.key == "Delete") {
+	if (pai.indice_ponto_de_blinking <= pai.instrucoes.length - 1 && pai.indice_ponto_de_blinking >0)
+	{
+		let removed3 = pai.instrucoes.splice(pai.indice_ponto_de_blinking,1);
+		removed3[0].face.remove();
+		removed3[0]={};
+		removed3=[];
+		document.getElementById('programa').style.principal.innerHTML=''; 
+		document.getElementById('programa').style.principal.mostra();
+		limpa_todos_blink(config);
+		return;
+	
+	} 
+
+}		
+
 
 if (e.key == "ArrowUp") { if (pai.indice_ponto_de_insercao>0) { swap(pai.instrucoes,pai.indice_ponto_de_insercao, pai.indice_ponto_de_insercao - 1);  pai.indice_ponto_de_insercao--; } }
 if (e.key == "ArrowDown") { if (pai.indice_ponto_de_insercao< pai.instrucoes.length - 1) { swap(pai.instrucoes,pai.indice_ponto_de_insercao, pai.indice_ponto_de_insercao + 1);  pai.indice_ponto_de_insercao++; } }
 if (e.key == "ArrowRight") { if (pai.indice_ponto_de_blinking <= pai.instrucoes.length - 1 && pai.indice_ponto_de_blinking >0) 
-								{ 
-								if (["desvio", "principal", "repeticao"].includes(pai.instrucoes[pai.indice_ponto_de_blinking].tipo) ) {
-																	principal.style.ponto_de_insercao = pai.instrucoes[pai.indice_ponto_de_blinking].ativa_ponto_de_insercao();
-																	var removed2 = pai.instrucoes.splice(pai.indice_ponto_de_insercao,1); 
-																	console.log("direita");
-																	console.log(removed2[0]);
-																	removed2[0].face.remove();
-																	removed2[0]={};
-																	removed2=[];
-																	pai.indice_ponto_de_insercao=-1;
-																	document.getElementById('programa').style.principal.innerHTML=''; 
-																	document.getElementById('programa').style.principal.mostra();
-																	pai.instrucoes[velho_ponto_de_blinking - 1].fim_blink();
+				{ 
+				if (["desvio", "principal", "repeticao"].includes(pai.instrucoes[pai.indice_ponto_de_blinking].tipo) ) {
+					programa.style.ponto_de_insercao = pai.instrucoes[pai.indice_ponto_de_blinking].ativa_ponto_de_insercao(0); // coloca no comeco
+					var removed2 = pai.instrucoes.splice(pai.indice_ponto_de_insercao,1); 
+								console.log("direita");
+								console.log(removed2[0]);
+								removed2[0].face.remove();
+								removed2[0]={};
+								removed2=[];
+								document.getElementById('programa').style.principal.innerHTML=''; 
+								document.getElementById('programa').style.principal.mostra();
+								limpa_todos_blink(config);
+								return;
 
-																	return;
-
-								}
-								} 
+				}
+				} 
 			}
 
 if (e.key == "ArrowLeft") { 
 	if ( pai.elemento_pai != document.getElementById("programa")) {
-		
-		if (velho_ponto_de_blinking > 0 && velho_ponto_de_blinking < pai.instrucoes.length - 1) {pai.instrucoes[velho_ponto_de_blinking - 1].fim_blink();}
 		let removed = pai.instrucoes.splice(pai.indice_ponto_de_insercao,1);  
 		pai.indice_ponto_de_insercao=-1;
-		principal.style.ponto_de_insercao = pai.elemento_pai.ativa_ponto_de_insercao();
+		let guarda = pai.elemento_pai.indice_ponto_de_insercao;
+		//alert(guarda);
+		programa.style.ponto_de_insercao = pai.elemento_pai.ativa_ponto_de_insercao(guarda);
+		programa.style.ponto_de_insercao.elemento_pai.indice_ponto_de_insercao = guarda;
 		console.log("esquerda");
 		console.log(removed);
 		removed[0].face.remove();
 		removed[0]={};
 		removed=[];
+		limpa_todos_blink(config);	
 		document.getElementById('programa').style.principal.innerHTML=''; 
 		document.getElementById('programa').style.principal.mostra();
 		return;
@@ -350,31 +419,37 @@ if (e.key == "ArrowLeft") {
 
 pai.indice_ponto_de_blinking = pai.indice_ponto_de_insercao + 1;
 
+limpa_todos_blink(config);
 if (pai.indice_ponto_de_blinking <= pai.instrucoes.length - 1) { 
-																	if (["desvio", "principal", "repeticao"].includes(pai.instrucoes[pai.indice_ponto_de_blinking].tipo) ) {
-																		pai.instrucoes[pai.indice_ponto_de_blinking].inicia_blink();
-																	}
-}
-if (velho_ponto_de_blinking <= pai.instrucoes.length - 1 && velho_ponto_de_blinking >0) 
-		{
-			if (pai.instrucoes[velho_ponto_de_blinking].tipo== "insercao") {velho_ponto_de_blinking--;}
-			pai.instrucoes[velho_ponto_de_blinking].fim_blink();
+		if (["desvio", "principal", "repeticao"].includes(pai.instrucoes[pai.indice_ponto_de_blinking].tipo) ) {
+				pai.instrucoes[pai.indice_ponto_de_blinking].inicia_blink();
 		}
-
+}
 
 document.getElementById('programa').style.principal.innerHTML=''; 
 document.getElementById('programa').style.principal.mostra();
+console.log(contem.clientHeight + " - " + programa.style.ponto_de_insercao.face.style.top.replace("px","") );
+if ( parseInt(programa.style.ponto_de_insercao.face.style.top.replace("px","")) > parseInt(contem.clientHeight) ||
+	parseInt(programa.style.ponto_de_insercao.face.style.height.replace("px","")) < programa.scrollTop)
+{
 
+	programa.scrollTop=parseInt(programa.style.ponto_de_insercao.face.style.top.replace("px",""));
 }
-)
 
-var principal = document.getElementById("programa");
-principal.style.width = "400px";
-principal.style.height = "600px";
-var config = new configuracoes(principal);
+}, true
+)
+var contem =  document.getElementById("contem");
+var programa = document.getElementById("programa");
+
+programa.style.width = "400px";
+programa.style.height = "600px";
+
+contem.style.width = programa.offsetWidth + "px";
+contem.style.height = programa.offsetHeight +  parseInt(document.getElementById("botao_repeticao").clientHeight) + "px";
+var config = new configuracoes(programa);
 var bloco1 = new bloco(config, null, null, config.esquerda, config.topo, "principal", config.altura, config.largura, config.elemento_pai);
-principal.style.principal = bloco1;
-principal.style.ponto_de_insercao =  bloco1.ativa_ponto_de_insercao();
+programa.style.principal = bloco1;
+programa.style.ponto_de_insercao =  bloco1.ativa_ponto_de_insercao(0);
 bloco1.mostra();
 
 </script>
