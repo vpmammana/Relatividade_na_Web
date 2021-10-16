@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>
+
+		</title>
+	</head>
+	<style>
+	#programa {
+		position: absolute;
+		top: 10%;
+		left: 10%;
+		width: 400px;
+		height: 300px;
+		border: 1px solid black;
+		background-color: gray;
+		overflow: scroll;
+	}
+	</style>
+
+<body>
+
+<div id="programa">
+<input type="button" value="nova repeticao" onclick="insere_bloco(document.getElementById('programa').style.ponto_de_insercao.elemento_pai, 'repeticao'); ">
+<input type="button" value="novo se" onclick="insere_bloco(document.getElementById('programa').style.ponto_de_insercao.elemento_pai, 'desvio'); ">
+</div>
+
+<script>
+
+//
+
+class configuracoes {
+constructor(elemento_pai){
+	this.fator_reducao = 0.9;
+	this.delta_t_blink = 300;
+	this.font_nome = 15;
+	this.font_ponto_insercao = 13;
+	this.color_nome = "black";
+	this.background_nome = "";
+	this.altura = 150;
+	this.largura= 150;
+	this.altura_insercao = 20;
+	this.largura_insercao = this.largura;
+	this.conta_id = 0;
+	this.elemento_pai = elemento_pai;
+	this.esquerda = 10;
+	this.topo = 20;
+	this.backgroundcolor_repeticao = "yellow";
+	this.backgroundcolor_principal = "blue";
+	this.backgroundcolor_desvio = "red";
+	this.backgroundcolor_insercao = "green";
+	this.backgroundcolor_blink = "orange";
+	this.borderradius = "25px";
+	this.topo_nome =    parseInt(this.borderradius)/3;
+	this.esquerda_nome= parseInt(this.borderradius)/3;
+	this.borda = "5px solid black";
+	this.borderradius_insercao = "5px";
+	this.borda_insercao = "2px solid black";
+	this.background = document.body;
+	this.tab = 20;
+}
+}
+
+class ponto_insercao {
+constructor (esquerda, topo, largura, altura, elemento_pai, configuracoes){
+	
+	this.configuracoes = configuracoes;
+	this.blinking =null;
+	this.tipo = "insercao";
+	this.conta_id = this.configuracoes.conta_id;
+	this.configuracoes.conta_id++;
+	this.elemento_pai = elemento_pai;
+	this.guarda_altura =  altura;
+	this.guarda_largura = largura;
+	this.topo = topo;
+	this.esquerda = esquerda;
+	this.face = this.retorna_face();
+}
+
+mostra(baixo){
+	this.elemento_pai.face.appendChild(this.face);
+	this.face.style.top = baixo + "px";
+	return parseInt(this.face.style.height.replace("px",""));
+}
+
+retorna_face(){
+
+	let div = document.createElement("div"); 
+	div.style.pai = this;
+	div.style.visibility = "visible";
+	//this.elemento_pai.appendChild(div);
+	div.id = "insercao_" + this.conta_id;
+	div.style.display="block";
+	div.style.position="absolute";
+	div.style.backgroundColor = this.configuracoes.backgroundcolor_insercao;
+	div.style.backgroundColor = this.configuracoes.backgroundcolor;
+	div.style.borderRadius = this.configuracoes.borderradius_insercao;
+	div.style.border = this.configuracoes.borda_insercao;
+	div.style.top = this.topo + "px";
+	div.innerHTML = "ponto de insercao";
+	div.style.fontSize = this.configuracoes.font_ponto_insercao;
+	div.style.left = this.esquerda + "px" ;
+	div.style.width  = this.guarda_largura + "px";
+	div.style.height = this.guarda_altura + "px";
+	return div;
+}
+
+inicia_blink_insercao(){
+	let that = this;
+	this.blink = setInterval ( function () 
+		{ 
+			if (that.face.style.backgroundColor== that.configuracoes.backgroundcolor_insercao) {
+				that.face.style.backgroundColor = that.configuracoes.backgroundcolor_blink;
+			}
+			else {
+				that.face.style.backgroundColor = that.configuracoes.backgroundcolor_insercao;
+			}
+			//console.log(that.configuracoes.delta_t_blink);
+		}  , that.configuracoes.delta_t_blink);
+} // fim inicia_blink()
+
+fim_blink_insercao(){
+	clearInterval(this.blink);
+	this.face.style.backgroundColor = this.configuracoes.backgroundcolor_insercao;
+} // fim fim_blink()
+
+
+
+}
+
+
+ class bloco {
+
+constructor (configuracoes, bloco_superior, condicional, esquerda, topo, tipo, altura, largura, elemento_pai){
+	this.configuracoes = configuracoes;
+	
+	if (tipo == "principal") 
+		{
+			this.nome = "principal";
+			this.background_tipo = this.configuracoes.backgroundcolor_principal; 
+		}
+	if (tipo == "repeticao") 
+		{
+			this.nome = "repete";
+			this.background_tipo = this.configuracoes.backgroundcolor_repeticao;
+		}
+		
+	if (tipo == "desvio"   ) 
+		{
+			this.nome = "se";
+			this.background_tipo = this.configuracoes.backgroundcolor_desvio;
+		}
+	this.blinking =null;
+	this.tipo = tipo;
+	this.pc = 0 // program count
+	this.indice_ponto_de_insercao = -1;
+	this.indice_ponto_de_blinking = -1;
+	this.conta_id = this.configuracoes.conta_id;
+	this.configuracoes.conta_id++;
+	this.elemento_pai = elemento_pai;
+	this.instrucoes = [];
+	this.condicional = [];
+	this.condicional.push(condicional);
+	this.guarda_altura =  altura;
+	this.guarda_largura = largura;
+	this.topo = topo;
+	this.esquerda = esquerda;
+	this.face = this.retorna_face();
+}
+
+mostra(baixo){
+	if (this.tipo == "principal") {
+	this.elemento_pai.appendChild(this.face);
+	}
+	else {
+	this.face.style.top = baixo + "px";
+	this.elemento_pai.face.appendChild(this.face);
+	}
+	return this.lista_instrucoes();
+}
+
+ativa_ponto_de_insercao(){
+	let insertion_largura = (this.guarda_largura * this.configuracoes.fator_reducao) - this.configuracoes.tab;
+	let insertion_altura  = this.configuracoes.altura_insercao;
+
+	let insertion = new ponto_insercao(this.configuracoes.tab, parseInt(this.face.style.titulo.style.height.replace("px","")) + this.topo, insertion_largura, insertion_altura, this, this.configuracoes);
+	this.instrucoes.push(insertion); // sempre comeca com um ponto de insercao
+	this.indice_ponto_de_insercao = this.instrucoes.length - 1;
+	return insertion;
+}
+
+
+insere_instrucao(objeto){
+//console.log(this.instrucoes);
+//	if (this.indice_ponto_de_insercao <= 0) { this.instrucoes.unshift(objeto); return;}
+//	if (this.indice_ponto_de_insercao >= this.instrucoes.length -1) {
+//		let espera = this.instrucoes.pop();
+//		this.instrucoes.push(objeto);
+//		this.instrucoes.push(espera);
+////console.log(this.instrucoes);
+//		return;
+//	}
+	this.instrucoes.splice(this.indice_ponto_de_insercao, 0, objeto);
+	this.indice_ponto_de_insercao++;
+}
+
+lista_instrucoes(){
+let i;
+let desconto = parseInt(this.face.style.titulo.style.top.replace("px","")) + parseInt(this.face.style.titulo.style.height.replace("px",""));
+let baixo = desconto ;
+//console.log(baixo);
+for (i=0; i< this.instrucoes.length; i++){
+	let instrucao=this.instrucoes[i];
+	// console.log(instrucao);
+	instrucao.guarda_altura = instrucao.mostra(baixo);
+	baixo = baixo + desconto  + instrucao.guarda_altura;
+	//console.log(instrucao.guarda_altura);
+}
+this.face.style.height = baixo + "px";
+return baixo;
+}
+
+retorna_face(){
+	let div = document.createElement("div"); 
+	div.style.pai = this;
+	div.style.visibility = "visible";
+	//this.elemento_pai.appendChild(div);
+	div.id = "bloco_" + this.conta_id;
+	div.style.display="block";
+	div.style.position="absolute";
+	div.style.backgroundColor = this.background_tipo;
+	div.style.borderRadius = this.configuracoes.borderradius;
+	div.style.border = this.configuracoes.borda;
+	div.style.top = this.topo + "px";
+	div.style.left = this.esquerda + "px";
+	if (this.tipo == "principal") {
+		div.style.width =  Math.round(parseInt(this.elemento_pai.style.width.replace("px","")) * this.configuracoes.fator_reducao ) +"px"  ;
+		div.style.height = Math.round(parseInt(this.elemento_pai.style.height.replace("px","")) * this.configuracoes.fator_reducao) +"px" ;
+		//alert(this.elemento_pai.style.width);
+	}
+	else{
+	div.style.width =  parseInt(this.elemento_pai.face.style.width.replace("px","")) *this.configuracoes.fator_reducao +"px"  ;
+	div.style.height = parseInt(this.elemento_pai.face.style.height.replace("px","")) *this.configuracoes.fator_reducao +"px" ;
+	}
+	this.guarda_largura = parseInt(div.style.width.replace("px",""));
+	this.guarda_altura  = parseInt(div.style.height.replace("px",""));
+
+	let div_nome = document.createElement("div");
+	div_nome.style.pai = div;
+	div_nome.style.visibility = "visible";
+	div.appendChild(div_nome);
+	div_nome.style.fontSize = this.configuracoes.font_nome + "px";
+	div_nome.style.color = this.configuracoes.color_nome;
+	div_nome.style.backgroundColor = this.configuracoes.background_nome;
+	div_nome.innerHTML = this.nome;	
+	div_nome.style.position = "absolute";
+	div_nome.style.top = this.configuracoes.topo_nome + "px";
+	div_nome.style.left = this.configuracoes.esquerda_nome + "px";
+	div_nome.style.height = this.configuracoes.font_nome + "px";
+	div.style.titulo = div_nome;
+
+	return div;
+}
+
+inicia_blink(){
+	let that = this;
+	this.blink = setInterval ( function () 
+		{ 
+			if (that.face.style.backgroundColor== that.background_tipo) {
+				that.face.style.backgroundColor = that.configuracoes.backgroundcolor_blink;
+			}
+			else {
+				that.face.style.backgroundColor = that.background_tipo;
+			}
+			//console.log(that.configuracoes.delta_t_blink);
+		}  , that.configuracoes.delta_t_blink);
+} // fim inicia_blink()
+
+fim_blink(){
+	clearInterval(this.blink);
+	this.face.style.backgroundColor = this.background_tipo;
+} // fim fim_blink()
+
+} // fim class bloco
+
+function insere_bloco(objeto, tipo){
+
+let objeto_itz = new bloco(config, null, null, objeto.esquerda, objeto.topo, tipo, objeto.guarda_altura, objeto.guarda_largura, objeto);
+objeto.insere_instrucao(objeto_itz);
+
+
+document.getElementById('programa').style.principal.innerHTML=''; document.getElementById('programa').style.principal.mostra();
+}
+
+function swap(lista, indice_origem, indice_destino){
+
+let troca = lista[indice_origem];
+lista[indice_origem] = lista[indice_destino];
+lista[indice_destino] = troca;
+
+}
+
+document.addEventListener("keydown",
+function (e){
+
+let pai =  principal.style.ponto_de_insercao.elemento_pai;
+
+let velho_ponto_de_blinking = pai.indice_ponto_de_blinking;
+
+if (e.key == "ArrowUp") { if (pai.indice_ponto_de_insercao>0) { swap(pai.instrucoes,pai.indice_ponto_de_insercao, pai.indice_ponto_de_insercao - 1);  pai.indice_ponto_de_insercao--; } }
+if (e.key == "ArrowDown") { if (pai.indice_ponto_de_insercao< pai.instrucoes.length - 1) { swap(pai.instrucoes,pai.indice_ponto_de_insercao, pai.indice_ponto_de_insercao + 1);  pai.indice_ponto_de_insercao++; } }
+if (e.key == "ArrowRight") { if (pai.indice_ponto_de_blinking <= pai.instrucoes.length - 1 && pai.indice_ponto_de_blinking >0) 
+								{ 
+								if (["desvio", "principal", "repeticao"].includes(pai.instrucoes[pai.indice_ponto_de_blinking].tipo) ) {
+																	principal.style.ponto_de_insercao = pai.instrucoes[pai.indice_ponto_de_blinking].ativa_ponto_de_insercao();
+																	var removed2 = pai.instrucoes.splice(pai.indice_ponto_de_insercao,1); 
+																	console.log("direita");
+																	console.log(removed2[0]);
+																	removed2[0].face.remove();
+																	removed2[0]={};
+																	removed2=[];
+																	pai.indice_ponto_de_insercao=-1;
+																	document.getElementById('programa').style.principal.innerHTML=''; 
+																	document.getElementById('programa').style.principal.mostra();
+																	pai.instrucoes[velho_ponto_de_blinking - 1].fim_blink();
+
+																	return;
+
+								}
+								} 
+			}
+
+if (e.key == "ArrowLeft") { 
+	if ( pai.elemento_pai != document.getElementById("programa")) {
+		
+		if (velho_ponto_de_blinking > 0 && velho_ponto_de_blinking < pai.instrucoes.length - 1) {pai.instrucoes[velho_ponto_de_blinking - 1].fim_blink();}
+		let removed = pai.instrucoes.splice(pai.indice_ponto_de_insercao,1);  
+		pai.indice_ponto_de_insercao=-1;
+		principal.style.ponto_de_insercao = pai.elemento_pai.ativa_ponto_de_insercao();
+		console.log("esquerda");
+		console.log(removed);
+		removed[0].face.remove();
+		removed[0]={};
+		removed=[];
+		document.getElementById('programa').style.principal.innerHTML=''; 
+		document.getElementById('programa').style.principal.mostra();
+		return;
+	}
+}
+
+pai.indice_ponto_de_blinking = pai.indice_ponto_de_insercao + 1;
+
+if (pai.indice_ponto_de_blinking <= pai.instrucoes.length - 1) { 
+																	if (["desvio", "principal", "repeticao"].includes(pai.instrucoes[pai.indice_ponto_de_blinking].tipo) ) {
+																		pai.instrucoes[pai.indice_ponto_de_blinking].inicia_blink();
+																	}
+}
+if (velho_ponto_de_blinking <= pai.instrucoes.length - 1 && velho_ponto_de_blinking >0) 
+		{
+			if (pai.instrucoes[velho_ponto_de_blinking].tipo== "insercao") {velho_ponto_de_blinking--;}
+			pai.instrucoes[velho_ponto_de_blinking].fim_blink();
+		}
+
+
+document.getElementById('programa').style.principal.innerHTML=''; 
+document.getElementById('programa').style.principal.mostra();
+
+}
+)
+
+var principal = document.getElementById("programa");
+principal.style.width = "400px";
+principal.style.height = "600px";
+var config = new configuracoes(principal);
+var bloco1 = new bloco(config, null, null, config.esquerda, config.topo, "principal", config.altura, config.largura, config.elemento_pai);
+principal.style.principal = bloco1;
+principal.style.ponto_de_insercao =  bloco1.ativa_ponto_de_insercao();
+bloco1.mostra();
+
+</script>
+</body>
+</html>
+
+
