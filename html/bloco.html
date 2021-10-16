@@ -76,6 +76,8 @@ constructor(elemento_pai){
 	this.background = document.body;
 	this.tab = 20;
 	this.classe_div = "instrucao_div";
+	this.executavel=[]
+	this.clock_execucao = 10; // ms para cara instrucao
 }
 }
 
@@ -117,7 +119,7 @@ retorna_face(){
 	div.style.border = this.configuracoes.borda_insercao;
 	div.style.top = this.topo + "px";
 	div.innerHTML = "&#x25BC Insira, edite ou apague bloco abaixo &#x25BC";
-	div.style.fontSize = this.configuracoes.font_ponto_insercao;
+	div.style.fontSize = this.configuracoes.font_ponto_insercao + "px";
 	div.style.left = this.esquerda + "px" ;
 	div.style.width  = this.guarda_largura + "px";
 	div.style.height = this.guarda_altura + "px";
@@ -156,7 +158,8 @@ constructor (configuracoes, bloco_superior, condicional, esquerda, topo, tipo, a
 		{
 			this.nome = "Espera <input id='espera_"+this.configuracoes.conta_id+"' class='entrada' type='text' value='10' size='4'/> newtons";
 			this.background_tipo = this.configuracoes.backgroundcolor_delay;
-			this.elemento_parametro =  document.getElementById("espera_"+this.configuracoes.conta_id); 
+			this.elemento_parametro =  document.getElementById("espera_"+this.configuracoes.conta_id);
+			this.funcao_parametro = {n_instrucao: +this.configuracoes.conta_id, funcao: "espera", parametro: "espera_"+this.configuracoes.conta_id }; 
 		}
 
 	if (tipo == "Fy") 
@@ -164,12 +167,14 @@ constructor (configuracoes, bloco_superior, condicional, esquerda, topo, tipo, a
 			this.nome = "Fy <input id='Fy_"+this.configuracoes.conta_id+"' class='entrada' type='text' value='10' size='4'/> newtons";
 			this.background_tipo = this.configuracoes.backgroundcolor_Fy; 
 			this.elemento_parametro =  document.getElementById("Fy_"+this.configuracoes.conta_id); 
+			this.funcao_parametro = {n_instrucao: +this.configuracoes.conta_id, funcao: "Fy", parametro: "Fy_"+this.configuracoes.conta_id }; 
 		}
 	if (tipo == "Fx") 
 		{
 			this.nome = "Fx <input id='Fx_"+this.configuracoes.conta_id+"' class='entrada' type='text' value='10' size='4'/> newtons";
 			this.background_tipo = this.configuracoes.backgroundcolor_Fx; 
 			this.elemento_parametro =  document.getElementById("Fx_"+this.configuracoes.conta_id); 
+			this.funcao_parametro = {n_instrucao: +this.configuracoes.conta_id, funcao: "Fx", parametro: "Fx_"+this.configuracoes.conta_id }; 
 		}
 	
 	if (tipo == "principal") 
@@ -177,12 +182,14 @@ constructor (configuracoes, bloco_superior, condicional, esquerda, topo, tipo, a
 			this.nome = "principal";
 			this.background_tipo = this.configuracoes.backgroundcolor_principal; 
 			this.elemento_parametro =  document.getElementById("principal_"+this.configuracoes.conta_id); 
+			this.funcao_parametro = {n_instrucao: +this.configuracoes.conta_id, funcao: "principal", parametro: "principal_"+this.configuracoes.conta_id }; 
 		}
 	if (tipo == "repeticao") 
 		{
 			this.nome = "repete <input id='repeticao_"+this.configuracoes.conta_id+"' class='entrada' type='text' value='10' size='4'/> vezes";
 			this.background_tipo = this.configuracoes.backgroundcolor_repeticao;
 			this.elemento_parametro =  document.getElementById("repeticao_"+this.configuracoes.conta_id); 
+			this.funcao_parametro = {n_instrucao: +this.configuracoes.conta_id, funcao: "repete", parametro: "repeticao_"+this.configuracoes.conta_id }; 
 		}
 		
 	if (tipo == "desvio"   ) 
@@ -241,11 +248,36 @@ insere_instrucao(objeto){
 //		return;
 //	}
 	this.instrucoes.splice(this.indice_ponto_de_insercao + 1, 0, objeto);
-	this.indice_ponto_de_blinking = this.indice_ponto_de_insercao + 1;
+	swap(this.instrucoes, this.indice_ponto_de_insercao, this.indice_ponto_de_insercao + 1);
 	limpa_todos_blink(this.configuracoes);
-	this.instrucoes[this.indice_ponto_de_blinking].inicia_blink();
+	this.indice_ponto_de_insercao++;
+	this.indice_ponto_de_blinking = this.indice_ponto_de_insercao + 1;
+	if(this.indice_ponto_de_blinking <= this.instrucoes.length - 1 && ["repeticao", "desvio", "principal"].includes(this.instrucoes[this.indice_ponto_de_blinking].tipo)) {this.instrucoes[this.indice_ponto_de_blinking].inicia_blink();}
 //	this.indice_ponto_de_insercao++;
 }
+
+monta_executavel(objetonics){
+let i;
+let j;
+let repeticoes = 1;
+if (objetonics.tipo == "principal"){ objetonics.configuracoes.executavel.length =0;}
+
+if (objetonics.tipo == "repeticao") { repeticoes = parseInt(document.getElementById(objetonics.funcao_parametro.parametro).value);}
+console.log(" Tipo: " + objetonics.tipo + " repeticoes: "+ repeticoes);
+for  (j=0; j < repeticoes; j++){
+	for (i=0; i < objetonics.instrucoes.length; i++) {
+		let instrucao = objetonics.instrucoes[i];
+		if (["Fx", "Fy", "delay"].includes(instrucao.tipo)){
+		objetonics.configuracoes.executavel.push(instrucao.funcao_parametro);
+		}
+		if([ "repeticao", "principal"].includes(instrucao.tipo)) {
+			instrucao.monta_executavel(instrucao);
+		}
+	}
+}
+
+}
+
 
 lista_instrucoes(){
 let i;
